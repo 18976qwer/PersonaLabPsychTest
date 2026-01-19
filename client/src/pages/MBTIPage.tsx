@@ -35,7 +35,7 @@ const Sidebar = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     width: 100%;
     position: sticky;
-    top: 4rem;
+    top: 60px;
     z-index: 100;
     background: ${({ theme }) => theme.colors.background};
     padding: 0.5rem 0;
@@ -59,8 +59,8 @@ const SidebarContent = styled.div`
   }
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    padding: 1rem;
-    margin-bottom: 1.5rem;
+    padding: 0;
+    margin-bottom: 0.5rem;
     
     h3 {
       margin-bottom: 0;
@@ -87,7 +87,7 @@ const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
     border-radius: 0 0 12px 12px;
     max-height: 300px;
     overflow-y: auto;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 `;
 
@@ -100,6 +100,7 @@ const MobileProgressHeader = styled.div`
     justify-content: space-between;
     width: 100%;
     position: relative;
+    padding: 1rem;
   }
 `;
 

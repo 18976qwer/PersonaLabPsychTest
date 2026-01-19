@@ -67,6 +67,7 @@ const ProgressContainer = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     margin: 0 1rem;
     max-width: 120px;
+    margin-top: 4px;
   }
 `;
 

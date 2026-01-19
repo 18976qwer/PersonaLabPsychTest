@@ -389,7 +389,7 @@ export const RelationshipsSection: React.FC<Props> = ({
         )}
       </MobileCardContainer>
 
-      <SubHeader><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
+      <SubHeader style={{ marginTop: '3rem' }}><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
       <IntimacyGrid>
         <ContentBox>
           <h4 style={{ color: theme.colors.success, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
