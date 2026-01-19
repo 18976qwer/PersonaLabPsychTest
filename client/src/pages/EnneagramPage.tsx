@@ -104,7 +104,7 @@ const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
   justify-items: center;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    grid-template-columns: repeat(9, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     max-height: 300px;
     overflow-y: auto;
     width: 100%;
@@ -178,7 +178,6 @@ const QuestionNumber = styled.button<{ $status: 'answered' | 'active' | 'normal'
     height: auto;
     aspect-ratio: 1;
     flex-shrink: 0;
-    font-size: 0.75rem;
   }
 `;
 

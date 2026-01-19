@@ -22,20 +22,6 @@ import { ReportSummarySection } from '../components/report/ReportSummarySection'
 import { ShareModal } from '../components/report/ShareModal';
 import { FaDownload, FaShareAlt, FaRedo } from 'react-icons/fa';
 
-const GlobalLoadingBar = styled.div`
-  margin: 2rem 0;
-  padding: 1.5rem;
-  border-radius: 12px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border: 1px solid rgba(0,0,0,0.06);
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-`;
-
 const Header = styled.header`
   text-align: center;
   margin-bottom: 3rem;
@@ -203,7 +189,7 @@ const buildDynamicReportData = (
 export const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { isAiEnabled, aiLoading, setAiLoading } = useAi();
+  const { isAiEnabled, apiKeys, provider, aiLoading, setAiLoading } = useAi();
   const { t, language } = useLanguage();
   const [reportData, setReportData] = useState<AnalysisResult>(mockAnalysisData);
   const [aiReport, setAiReport] = useState<AIReportData | null>(null);
@@ -293,43 +279,49 @@ export const ResultsPage: React.FC = () => {
     
     if (!mbtiResult || !enneagramResult) return;
 
+    const activeKey = apiKeys[provider];
+    if (!activeKey) {
+      setAiError(t('results.apiKeyError'));
+      return;
+    }
+
     setAiLoading(true);
     const lang = language === 'zh' ? 'zh' : 'en';
 
-    const activeKey = StorageManager.getItem<string>('deepseek_api_key');
-    if (!activeKey) {
-      setAiError(t('results.apiKeyError'));
+    if (provider === 'deepseek') {
+      StorageManager.setItem('deepseek_api_key', activeKey);
+      fetchDeepSeekAnalysis(
+        mbtiResult,
+        String(enneagramResult.mainType),
+        String(enneagramResult.subtype),
+        lang,
+        modules.length > 0 ? modules : undefined
+      )
+      .then(data => {
+        if (data) {
+          setAiReport(prev => {
+            if (!prev) return data as AIReportData;
+            return {
+              ...prev,
+              ...data
+            };
+          });
+          setAiError(null);
+        } else {
+          setAiError(t('results.aiNoData'));
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setAiError(t('results.aiError'));
+      })
+      .finally(() => {
+        setAiLoading(false);
+      });
+    } else {
+      setAiError(t('results.onlyDeepSeek'));
       setAiLoading(false);
-      return;
     }
-    fetchDeepSeekAnalysis(
-      mbtiResult,
-      String(enneagramResult.mainType),
-      String(enneagramResult.subtype),
-      lang,
-      modules.length > 0 ? modules : undefined
-    )
-    .then(data => {
-      if (data) {
-        setAiReport(prev => {
-          if (!prev) return data as AIReportData;
-          return {
-            ...prev,
-            ...data
-          };
-        });
-        setAiError(null);
-      } else {
-        setAiError(t('results.aiNoData'));
-      }
-    })
-    .catch((err) => {
-      console.error(err);
-      setAiError(t('results.aiError'));
-    })
-    .finally(() => {
-      setAiLoading(false);
-    });
   };
 
   useEffect(() => {
@@ -353,7 +345,7 @@ export const ResultsPage: React.FC = () => {
     if (isAiEnabled) {
        // Optional: could auto-enable all sections if global is true
     }
-  }, [isAiEnabled, language, t]);
+  }, [isAiEnabled, apiKeys, provider, language, t]);
 
   const handleRetest = () => {
     if (window.confirm(t('report.retestConfirm'))) {
@@ -389,9 +381,7 @@ export const ResultsPage: React.FC = () => {
   
   const shareData = {
     mbti: mbtiResult,
-    type: `Type ${enneagramResult.mainType}w${enneagramResult.subtype}`,
-    keywords: reportData.readingGuide.keywords || [],
-    oneLiner: reportData.readingGuide.oneLiner || ''
+    type: `Type ${enneagramResult.mainType}w${enneagramResult.subtype}`
   };
 
   return (
@@ -461,10 +451,6 @@ export const ResultsPage: React.FC = () => {
         onToggleAi={() => toggleSectionAi('summary')}
         showAiToggle={true}
       />
-
-      {isAiEnabled && aiLoading && (
-        <GlobalLoadingBar />
-      )}
 
       {isAiEnabled && !aiReport && !aiLoading && aiError && (
         <div

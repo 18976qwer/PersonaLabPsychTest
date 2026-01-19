@@ -216,34 +216,6 @@ const ContentSection = styled.div`
   }
 `;
 
-const NavLinks = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-bottom: 1.5rem;
-`;
-
-const NavLink = styled.button`
-  border: 1px solid ${({ theme }) => theme.colors.primary};
-  color: ${({ theme }) => theme.colors.primary};
-  background: ${({ theme }) => `${theme.colors.primary}10`};
-  padding: 0.5rem 0.9rem;
-  border-radius: 999px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:hover {
-    background: ${({ theme }) => `${theme.colors.primary}20`};
-  }
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    font-size: 0.85rem;
-    padding: 0.45rem 0.8rem;
-  }
-`;
-
 const GuideGroup = styled.div`
   margin-bottom: 2.5rem;
   
@@ -442,24 +414,6 @@ export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, w
   const primaryInfo = getEnneagramInfo(primaryEnneagram);
   const wingInfo = getEnneagramInfo(wingEnneagram);
 
-  const quickSections = [
-    { id: 'traits', label: t('report.traits') },
-    { id: 'growth', label: t('report.growth') },
-    { id: 'career', label: t('report.career') },
-    { id: 'relationships', label: t('report.relationships') },
-    { id: 'summary', label: t('report.summary') }
-  ];
-
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-    }
-  };
-
   return (
     <ReportSection id="reading-guide" title={t('report.readingGuide')} icon={FaBookOpen}>
       <HeroContainer
@@ -526,13 +480,6 @@ export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, w
         </HeaderSection>
         
         <ContentSection>
-          <NavLinks>
-            {quickSections.map(s => (
-              <NavLink key={s.id} onClick={() => scrollToSection(s.id)}>
-                {s.label}
-              </NavLink>
-            ))}
-          </NavLinks>
           <GuideGroup>
             <GuideTitle>
               <FaLayerGroup /> 
