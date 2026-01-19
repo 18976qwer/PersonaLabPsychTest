@@ -86,9 +86,7 @@ export const ReportNavigation: React.FC = () => {
     const element = document.getElementById(id);
     if (element) {
       const offset = 120; // Header + Nav height compensation
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = element.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - offset;
 
       window.scrollTo({

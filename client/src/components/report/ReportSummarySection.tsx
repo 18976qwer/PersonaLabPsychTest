@@ -188,7 +188,11 @@ export const ReportSummarySection: React.FC<Props> = ({
         isAiEnabled={isAiEnabled}
         showAiToggle={showAiToggle}
       >
-        <SummaryBox>
+        <SummaryBox
+          key="loading"
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
           <SkeletonBlock />
           <SkeletonBlock />
           <SkeletonBlock width="80%" />
