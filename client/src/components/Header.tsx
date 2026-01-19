@@ -149,13 +149,17 @@ export const Header: React.FC = () => {
   const isTestPage = location.pathname.includes('/mbti') || location.pathname.includes('/enneagram');
   
   const handleLogoClick = () => {
-    if (isHome) return;
+    if (isHome) {
+      window.scrollTo(0, 0);
+      return;
+    }
 
     if (isTestPage) {
       setShowModal(true);
     } else {
       setShowProgress(false);
       navigate('/');
+      window.scrollTo(0, 0);
     }
   };
 
@@ -163,6 +167,7 @@ export const Header: React.FC = () => {
     setShowModal(false);
     setShowProgress(false);
     navigate('/');
+    window.scrollTo(0, 0);
   };
 
   const percentage = total > 0 ? Math.round((progress / total) * 100) : 0;

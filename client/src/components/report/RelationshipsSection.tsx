@@ -389,7 +389,7 @@ export const RelationshipsSection: React.FC<Props> = ({
         )}
       </MobileCardContainer>
 
-      <SubHeader style={{ marginTop: '3rem' }}><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
+      <SubHeader style={{ marginTop: '4rem' }}><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
       <IntimacyGrid>
         <ContentBox>
           <h4 style={{ color: theme.colors.success, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -413,7 +413,7 @@ export const RelationshipsSection: React.FC<Props> = ({
         </ContentBox>
       </IntimacyGrid>
 
-      <SubHeader><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
+      <SubHeader style={{ marginTop: '4rem' }}><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
       <GrowthContainer>
         {[
           { title: t('report.relationshipsSection.growth.awarenessTitle'), data: growthData.awareness, number: 1 },

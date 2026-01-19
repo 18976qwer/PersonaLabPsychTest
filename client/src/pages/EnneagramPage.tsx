@@ -34,11 +34,14 @@ const Sidebar = styled.div`
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     width: 100%;
-    position: sticky;
-    top: 60px;
+    position: fixed;
+    top: 58px;
+    left: 0;
+    right: 0;
     z-index: 100;
     background: ${({ theme }) => theme.colors.background};
-    padding: 0.5rem 0;
+    padding: 0.5rem 0 0 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   }
 `;
 
@@ -63,7 +66,10 @@ const SidebarContent = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     padding: 0;
     max-height: none;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
     
     h3 {
       margin-bottom: 0;
@@ -108,7 +114,7 @@ const MobileProgressHeader = styled.div`
     justify-content: space-between;
     width: 100%;
     position: relative;
-    padding: 1rem;
+    padding: 1rem 1rem 0.5rem 1rem;
   }
 `;
 
@@ -164,7 +170,7 @@ const MainContent = styled.div`
   margin-top: 1.4rem;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    margin-top: 0.5rem;
+    margin-top: 100px;
   }
 `;
 
@@ -188,6 +194,10 @@ const TestButton = styled.button`
 const PageTitle = styled.h2`
   margin-bottom: 1rem;
   color: ${({ theme }) => theme.colors.primary};
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    margin-top: 0;
+  }
 `;
 
 const QuestionItem = styled.div<{ $isActive: boolean }>`

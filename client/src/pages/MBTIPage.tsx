@@ -34,11 +34,14 @@ const Sidebar = styled.div`
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     width: 100%;
-    position: sticky;
-    top: 60px;
+    position: fixed;
+    top: 58px;
+    left: 0;
+    right: 0;
     z-index: 100;
     background: ${({ theme }) => theme.colors.background};
-    padding: 0.5rem 0;
+    padding: 0.5rem 0 0 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   }
 `;
 
@@ -60,7 +63,10 @@ const SidebarContent = styled.div`
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     padding: 0;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
     
     h3 {
       margin-bottom: 0;
@@ -105,7 +111,7 @@ const MobileProgressHeader = styled.div`
     justify-content: space-between;
     width: 100%;
     position: relative;
-    padding: 1rem;
+    padding: 1rem 1rem 0.5rem 1rem;
   }
 `;
 
@@ -164,10 +170,18 @@ const MainContent = styled.div`
   flex: 1;
   min-width: 0;
   margin-top: 0.4rem;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    margin-top: 100px;
+  }
 `;
 
 const PageTitle = styled.h2`
   margin: 0.7rem 0 1.3rem;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    margin-top: 0;
+  }
 `;
 
 const AlertBar = styled(motion.div)`
