@@ -34,13 +34,16 @@ const Sidebar = styled.div`
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     width: 100%;
-    position: sticky;
+    position: fixed;
     top: 56px;
+    left: 0;
+    right: 0;
     z-index: 900;
     background: ${({ theme }) => theme.colors.background};
     padding: 0;
     margin-top: 0;
     height: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
 `;
 
@@ -66,7 +69,7 @@ const SidebarContent = styled.div`
     padding: 0;
     max-height: none;
     margin-bottom: 0;
-    background: transparent;
+    background: #fff0f0;
     box-shadow: none;
     border-radius: 0;
     
@@ -90,7 +93,7 @@ const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
     z-index: 100;
     border-radius: 0 0 12px 12px;
     margin-top: 0;
-    border-top: none;
+    border-top: 1px solid rgba(0,0,0,0.05);
   }
 `;
 
@@ -118,15 +121,14 @@ const MobileProgressHeader = styled.div`
     width: 100%;
     position: relative;
     padding: 0.8rem 1rem;
-    background: #f0f2f5;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    background: transparent;
     cursor: pointer;
     z-index: 101;
     
     h3 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #4a5568;
+      font-size: 1rem;
+      font-weight: 700;
+      color: ${({ theme }) => theme.colors.textLight};
       margin: 0;
     }
   }
@@ -185,7 +187,7 @@ const MainContent = styled.div`
   margin-top: 1.4rem;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    margin-top: 0;
+    margin-top: 45px;
   }
 `;
 
