@@ -415,7 +415,7 @@ export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, w
   const wingInfo = getEnneagramInfo(wingEnneagram);
 
   return (
-    <ReportSection id="reading-guide" title={t('report.readingGuide')} icon={FaBookOpen}>
+    <ReportSection id="guide" title={t('report.readingGuide')} icon={FaBookOpen}>
       <HeroContainer
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

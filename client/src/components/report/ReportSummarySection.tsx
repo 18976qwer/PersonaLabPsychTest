@@ -210,6 +210,26 @@ export const ReportSummarySection: React.FC<Props> = ({
     );
   }
 
+  // Also check if we are waiting for AI but have no data yet (fallback loading)
+  if (isAiEnabled && !useAiSummary && !data) {
+     return (
+      <ReportSection 
+        id="summary" 
+        title={t('report.summary')} 
+        icon={FaFlagCheckered}
+        onToggleAi={onToggleAi}
+        isAiEnabled={isAiEnabled}
+        showAiToggle={showAiToggle}
+      >
+        <SummaryBox>
+          <SkeletonBlock />
+          <SkeletonBlock />
+          <SkeletonBlock width="80%" />
+        </SummaryBox>
+      </ReportSection>
+     )
+  }
+
   return (
     <ReportSection 
       id="summary" 

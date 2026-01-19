@@ -423,6 +423,10 @@ export const PersonalGrowthSection: React.FC<Props> = ({
         }))
       ]
     : data.strengthsAnalysis;
+    
+  // Ensure we show loading if AI is enabled and loading, even if we have data (to indicate refresh)
+  // Or if AI is enabled but we don't have AI data yet (waiting for first load)
+  const showLoading = (isAiEnabled && aiLoading) || (isAiEnabled && !useAiGrowth);
 
   return (
     <ReportSection 
@@ -449,7 +453,19 @@ export const PersonalGrowthSection: React.FC<Props> = ({
             </tr>
           </thead>
           <tbody>
-            {(isAiEnabled && aiLoading ? data.reactionTable : reactionData).map((row, idx) => (
+            {showLoading ? (
+              // Loading Skeleton Rows
+              [1, 2, 3].map(i => (
+                <tr key={i}>
+                  <td><SkeletonBlock width="80px" /></td>
+                  <td><SkeletonBlock /><SkeletonBlock width="80%" /></td>
+                  <td><SkeletonBlock /><SkeletonBlock width="80%" /></td>
+                  <td><SkeletonBlock /></td>
+                  <td><SkeletonBlock /></td>
+                </tr>
+              ))
+            ) : (
+              reactionData.map((row, idx) => (
               <tr key={idx}>
                 <td>
                   <StateBadge $state={row.state}>
@@ -457,66 +473,66 @@ export const PersonalGrowthSection: React.FC<Props> = ({
                     {t(`report.growthSection.reaction.stateLabel.${getStateKey(row.state)}`)}
                   </StateBadge>
                 </td>
-                {isAiEnabled && aiLoading ? (
-                  <>
-                    <td><SkeletonBlock /><SkeletonBlock width="80%" /><SkeletonBlock width="90%" /></td>
-                    <td><SkeletonBlock /><SkeletonBlock width="80%" /><SkeletonBlock width="90%" /></td>
-                    <td><SkeletonBlock height="4rem" /></td>
-                    <td><SkeletonBlock height="4rem" /></td>
-                  </>
-                ) : (
-                  <>
-                    <td>
-                      <ListUl>
-                        {row.work.map((item: string, i: number) => {
-                          const { label, desc } = parseReactionItem(item);
-                          return (
-                            <li key={i}>
-                              {label ? (
-                                <>
-                                  <strong>{label}：</strong>
-                                  {desc}
-                                </>
-                              ) : (
-                                item
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ListUl>
-                    </td>
-                    <td>
-                      <ListUl>
-                        {row.relation.map((item: string, i: number) => {
-                          const { label, desc } = parseReactionItem(item);
-                          return (
-                            <li key={i}>
-                              {label ? (
-                                <>
-                                  <strong>{label}：</strong>
-                                  {desc}
-                                </>
-                              ) : (
-                                item
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ListUl>
-                    </td>
-                    <td>{row.feeling}</td>
-                    <td>{row.entry}</td>
-                  </>
-                )}
+                <td>
+                  <ListUl>
+                    {row.work.map((item: string, i: number) => {
+                      const { label, desc } = parseReactionItem(item);
+                      return (
+                        <li key={i}>
+                          {label ? (
+                            <>
+                              <strong>{label}：</strong>
+                              {desc}
+                            </>
+                          ) : (
+                            item
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ListUl>
+                </td>
+                <td>
+                  <ListUl>
+                    {row.relation.map((item: string, i: number) => {
+                      const { label, desc } = parseReactionItem(item);
+                      return (
+                        <li key={i}>
+                          {label ? (
+                            <>
+                              <strong>{label}：</strong>
+                              {desc}
+                            </>
+                          ) : (
+                            item
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ListUl>
+                </td>
+                <td>{row.feeling}</td>
+                <td>{row.entry}</td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </ReactionTable>
       </TableWrapper>
 
       {/* Mobile View */}
       <MobileCardContainer>
-        {(isAiEnabled && aiLoading ? data.reactionTable : reactionData).map((row, idx) => (
+        {showLoading ? (
+           [1, 2, 3].map(i => (
+             <MobileCard key={i}>
+               <SkeletonBlock width="100px" style={{marginBottom: '1rem'}} />
+               <SkeletonBlock />
+               <SkeletonBlock width="80%" />
+               <SkeletonBlock style={{marginTop: '1rem'}} />
+               <SkeletonBlock width="60%" />
+             </MobileCard>
+           ))
+        ) : (
+          reactionData.map((row, idx) => (
           <MobileCard key={idx} $borderColor={getStateColor(row.state, theme)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <StateBadge $state={row.state}>
@@ -561,7 +577,7 @@ export const PersonalGrowthSection: React.FC<Props> = ({
               <p>{row.entry}</p>
             </CardRow>
           </MobileCard>
-        ))}
+        )))}
       </MobileCardContainer>
 
       <SubHeader style={{ marginTop: '2rem' }}><FaLevelUpAlt /> {t('report.growthSection.rankingTitle')}</SubHeader>
@@ -578,9 +594,19 @@ export const PersonalGrowthSection: React.FC<Props> = ({
             </tr>
           </thead>
           <tbody>
-            {(isAiEnabled && aiLoading ? data.strengthsAnalysis : strengthsData).map((row, idx) => {
+            {showLoading ? (
+               [1, 2, 3, 4].map(i => (
+                 <tr key={i}>
+                   <td><SkeletonBlock width="100px" /></td>
+                   <td><SkeletonBlock width="120px" /></td>
+                   <td><SkeletonBlock /></td>
+                   <td><SkeletonBlock /></td>
+                 </tr>
+               ))
+            ) : (
+              strengthsData.map((row, idx) => {
               const showBadge =
-                idx === 0 || row.level !== (isAiEnabled && aiLoading ? data.strengthsAnalysis : strengthsData)[idx - 1].level;
+                idx === 0 || row.level !== strengthsData[idx - 1].level;
 
               return (
                 <tr key={idx}>
@@ -599,29 +625,29 @@ export const PersonalGrowthSection: React.FC<Props> = ({
                       <LevelText>{row.level}</LevelText>
                     )}
                   </td>
-                  {isAiEnabled && aiLoading ? (
-                    <>
-                      <td><SkeletonBlock width="120px" /></td>
-                      <td><SkeletonBlock /></td>
-                      <td><SkeletonBlock /></td>
-                    </>
-                  ) : (
-                    <>
-                      <td style={{ fontWeight: 500 }}>{row.field}</td>
-                      <td>{row.desc}</td>
-                      <td>{row.improvement}</td>
-                    </>
-                  )}
+                  <td style={{ fontWeight: 500 }}>{row.field}</td>
+                  <td>{row.desc}</td>
+                  <td>{row.improvement}</td>
                 </tr>
               );
-            })}
+            }))}
           </tbody>
         </RankingTable>
       </TableWrapper>
 
       {/* Mobile View */}
       <MobileCardContainer>
-        {(isAiEnabled && aiLoading ? data.strengthsAnalysis : strengthsData).map((row, idx) => (
+        {showLoading ? (
+          [1, 2, 3, 4].map(i => (
+            <MobileCard key={i}>
+               <SkeletonBlock width="100px" style={{marginBottom: '0.5rem'}} />
+               <SkeletonBlock width="40%" style={{marginBottom: '1rem'}} />
+               <SkeletonBlock />
+               <SkeletonBlock width="80%" />
+            </MobileCard>
+          ))
+        ) : (
+          strengthsData.map((row, idx) => (
           <MobileCard key={idx}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <LevelBadge $level={row.level}>
@@ -645,7 +671,7 @@ export const PersonalGrowthSection: React.FC<Props> = ({
               <p>{row.improvement}</p>
             </CardRow>
           </MobileCard>
-        ))}
+        )))}
       </MobileCardContainer>
 
     </ReportSection>

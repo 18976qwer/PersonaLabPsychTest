@@ -119,6 +119,7 @@ npm start       # 等价于 node dist/index.js
   - 职业路径（核心优势、潜在盲点、团队角色、协作风格、最佳环境、互补同伴、职业陷阱）
   - 人际关系（沟通模式调整清单、亲密关系动态、关系成长方向）
   - 报告总结（关键要点与一页总结）
+  - 移动端专属阅读指引导航（吸顶悬浮、章节跳转）
 - AI 深度分析能力：
   - 后端通过 DeepSeek API 生成结构化报告数据
   - 前端每个 Section 有独立的 AI 开关与加载状态（只刷新当前分区）
@@ -181,6 +182,7 @@ npm start       # 等价于 node dist/index.js
   - `client/src/pages/AIAnalysisPage.tsx`
 - 报告模块组件：
   - `client/src/components/report/ReadingGuideSection.tsx`
+  - `client/src/components/report/ReportNavigation.tsx`
   - `client/src/components/report/DataVisualizationSection.tsx`
   - `client/src/components/report/PersonalityTraitsSection.tsx`
   - `client/src/components/report/PersonalGrowthSection.tsx`
