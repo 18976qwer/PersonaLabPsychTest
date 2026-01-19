@@ -35,8 +35,8 @@ const Sidebar = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     width: 100%;
     position: sticky;
-    top: 60px; /* Exact header height match */
-    z-index: 100;
+    top: 56px; /* Adjusted to match exact header height */
+    z-index: 900; /* Increased z-index to ensure it stays above content */
     background: ${({ theme }) => theme.colors.background};
     padding: 0;
     margin-top: 0;

@@ -454,7 +454,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
         </ListCard>
       </ListGrid>
 
-      <SectionHeader style={{ marginTop: '3rem' }}>{t('report.traitsSection.timelineTitle')}</SectionHeader>
+      <SectionHeader style={{ marginTop: '2rem' }}>{t('report.traitsSection.timelineTitle')}</SectionHeader>
       <TimelineBox>
         <TimeCard whileHover={{ y: -5 }}>
           <h3><FaHourglassHalf /> {t('report.traitsSection.pastTitle')}</h3>
