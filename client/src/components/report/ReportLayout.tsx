@@ -23,6 +23,10 @@ const ContentWrapper = styled.div`
   @media (max-width: 1200px) {
     max-width: 100%;
   }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    padding-top: 8.5rem;
+  }
 `;
 
 const MainContent = styled.main`

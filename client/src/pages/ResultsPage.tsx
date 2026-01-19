@@ -351,6 +351,10 @@ export const ResultsPage: React.FC = () => {
   ];
 
   useEffect(() => {
+    setIsAiEnabled(false);
+  }, []);
+
+  useEffect(() => {
     window.scrollTo(0, 0);
 
     const mbtiResult = StorageManager.getItem<string>('mbti_result');

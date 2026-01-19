@@ -73,8 +73,8 @@ export const ReportNavigation: React.FC = () => {
   const { t } = useLanguage();
 
   const menuItems = [
-    { id: 'guide', label: t('report.guide') },
-    { id: 'traits', label: t('report.personalityTraits') },
+    { id: 'guide', label: t('report.readingGuide') },
+    { id: 'traits', label: t('report.traits') },
     { id: 'growth', label: t('report.growth') },
     { id: 'career', label: t('report.career') },
     { id: 'relationships', label: t('report.relationships') },
