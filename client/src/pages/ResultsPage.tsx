@@ -242,12 +242,10 @@ const buildDynamicReportData = (
   };
 };
 
-type SectionKey = 'traits' | 'growth' | 'career' | 'relationships' | 'summary';
-
 export const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { isAiEnabled, setIsAiEnabled, aiLoading, setAiLoading } = useAi();
+  const { isAiEnabled, aiLoading, setAiLoading } = useAi();
   const { t, language } = useLanguage();
   const [reportData, setReportData] = useState<AnalysisResult>(mockAnalysisData);
   const [aiReport, setAiReport] = useState<AIReportData | null>(null);
@@ -266,7 +264,7 @@ export const ResultsPage: React.FC = () => {
         aiReport.relationships && 
         aiReport.summary;
 
-      if (!hasFullData && !aiLoading) {
+      if (!hasFullData && !aiLoading && !aiError) {
         setAiLoading(true);
         const mbtiResult = StorageManager.getItem<string>('mbti_result');
         const enneagramResult = StorageManager.getItem<any>('enneagram_result');
@@ -307,7 +305,7 @@ export const ResultsPage: React.FC = () => {
           });
       }
     }
-  }, [isAiEnabled, language, t, aiReport, aiLoading]);
+  }, [isAiEnabled, language, t, aiReport, aiLoading, aiError]);
 
   const mbtiLetterCounts = StorageManager.getItem<Record<string, number>>('mbti_letter_counts') || {};
 
@@ -366,7 +364,6 @@ export const ResultsPage: React.FC = () => {
     
     setAiReport(null);
     setAiError(null);
-    setAiLoading(false);
   }, [language, t]);
 
   const handleRetest = () => {

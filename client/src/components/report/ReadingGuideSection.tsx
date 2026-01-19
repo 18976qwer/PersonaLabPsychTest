@@ -5,6 +5,7 @@ import { ReportSection } from './ReportSection';
 import { AnalysisResult } from '../../types/report';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion } from 'framer-motion';
+import { FaLink } from 'react-icons/fa';
 
 const HeroContainer = styled(motion.div)`
   background: ${({ theme }) => theme.colors.white};
@@ -345,6 +346,33 @@ const QuestionItem = styled(ListItem)`
   }
 `;
 
+const MobileQuickNav = styled.div`
+  display: none;
+  margin: 1rem 0 2rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    display: flex;
+  }
+`;
+
+const QuickNavItem = styled.button`
+  border: 1px solid ${({ theme }) => theme.colors.primary};
+  background: white;
+  color: ${({ theme }) => theme.colors.primary};
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:active {
+    background: ${({ theme }) => `${theme.colors.primary}10`};
+  }
+`;
+
 const QuestionTitle = styled.div`
   font-size: 1.1rem;
   font-weight: 700;
@@ -396,6 +424,18 @@ interface Props {
 
 export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, wingEnneagram }) => {
   const { language, t } = useLanguage();
+  
+  const handleScroll = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 120;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+    }
+  };
 
   // Use dynamic data if available, otherwise fallback to mock
   const keywords = data.keywords || t('report.readingGuideData.keywords', { returnObjects: true }) as string[];
@@ -480,6 +520,23 @@ export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, w
         </HeaderSection>
         
         <ContentSection>
+          <MobileQuickNav>
+            <QuickNavItem onClick={() => handleScroll('traits')}>
+              <FaLink style={{ marginRight: 6 }} />{t('report.traits')}
+            </QuickNavItem>
+            <QuickNavItem onClick={() => handleScroll('growth')}>
+              <FaLink style={{ marginRight: 6 }} />{t('report.growth')}
+            </QuickNavItem>
+            <QuickNavItem onClick={() => handleScroll('career')}>
+              <FaLink style={{ marginRight: 6 }} />{t('report.career')}
+            </QuickNavItem>
+            <QuickNavItem onClick={() => handleScroll('relationships')}>
+              <FaLink style={{ marginRight: 6 }} />{t('report.relationships')}
+            </QuickNavItem>
+            <QuickNavItem onClick={() => handleScroll('summary')}>
+              <FaLink style={{ marginRight: 6 }} />{t('report.summary')}
+            </QuickNavItem>
+          </MobileQuickNav>
           <GuideGroup>
             <GuideTitle>
               <FaLayerGroup /> 
