@@ -30,6 +30,8 @@ const Logo = styled.div<{ $clickable: boolean }>`
   gap: 0.5rem;
   color: ${({ theme }) => theme.colors.primary};
   cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+  width: 140px; /* Fixed width to prevent shifting */
+  flex-shrink: 0;
 `;
 
 const LogoMark = styled.div`
@@ -59,14 +61,15 @@ const LogoLine1 = styled.div`
 const ProgressContainer = styled.div`
   flex: 1;
   max-width: 300px;
-  margin: 0 2rem;
+  margin: 0 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  justify-content: center; /* Center vertically */
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    margin: 0 1rem;
-    max-width: 120px;
+    margin: 0 0.5rem;
+    max-width: none; /* Allow full width in remaining space */
     margin-top: 4px;
   }
 `;
@@ -111,9 +114,14 @@ const LanguageSwitcher = styled.div`
   align-items: center;
   gap: 0.5rem;
   font-size: 1rem;
+  justify-content: flex-end; /* Align right */
+  width: 140px; /* Fixed width matching Logo to ensure center balance */
+  flex-shrink: 0;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     white-space: nowrap;
+    width: auto; /* Allow auto width on mobile if needed, but flex-shrink 0 keeps it stable */
+    min-width: 80px;
   }
 `;
 

@@ -40,6 +40,7 @@ const Sidebar = styled.div`
     background: ${({ theme }) => theme.colors.background};
     padding: 0;
     margin-top: 0;
+    height: auto;
   }
 `;
 
@@ -67,6 +68,7 @@ const SidebarContent = styled.div`
     margin-bottom: 0;
     background: transparent;
     box-shadow: none;
+    border-radius: 0;
     
     h3 {
       margin-bottom: 0;
@@ -115,10 +117,18 @@ const MobileProgressHeader = styled.div`
     justify-content: space-between;
     width: 100%;
     position: relative;
-    padding: 1rem 1rem 0.5rem 1rem;
-    background: white;
-    border-radius: 12px 12px 0 0;
-    box-shadow: ${({ theme }) => theme.shadows.card};
+    padding: 0.8rem 1rem;
+    background: #f0f2f5;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    cursor: pointer;
+    z-index: 101;
+    
+    h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #4a5568;
+      margin: 0;
+    }
   }
 `;
 

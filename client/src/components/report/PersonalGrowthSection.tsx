@@ -564,7 +564,7 @@ export const PersonalGrowthSection: React.FC<Props> = ({
         ))}
       </MobileCardContainer>
 
-      <SubHeader style={{ marginTop: '4rem' }}><FaLevelUpAlt /> {t('report.growthSection.rankingTitle')}</SubHeader>
+      <SubHeader style={{ marginTop: '3rem' }}><FaLevelUpAlt /> {t('report.growthSection.rankingTitle')}</SubHeader>
       
       {/* Desktop View */}
       <TableWrapper>
