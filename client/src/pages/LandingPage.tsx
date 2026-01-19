@@ -32,7 +32,9 @@ const Title = styled(motion.h1)`
   font-weight: 800;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    font-size: 2.1rem;
+    font-size: 1.8rem;
+    padding: 0 0.5rem;
+    line-height: 1.3;
   }
 `;
 

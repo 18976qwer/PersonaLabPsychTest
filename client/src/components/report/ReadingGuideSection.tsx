@@ -291,6 +291,16 @@ const StepItem = styled(ListItem)`
     color: ${({ theme }) => `${theme.colors.textLight}18`};
     letter-spacing: 1px;
   }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    padding-right: 1rem;
+    
+    &::after {
+      font-size: 1.8rem;
+      right: 0.8rem;
+      top: 0.5rem;
+    }
+  }
 `;
 
 const QuestionList = styled(StyledList)`
@@ -319,6 +329,10 @@ const QuestionItem = styled(ListItem)`
     transform: translateY(-2px);
     border-color: ${({ theme }) => theme.colors.primary};
   }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    padding: 1.2rem;
+  }
 `;
 
 const QuestionTitle = styled.div`
@@ -341,6 +355,20 @@ const QuestionTitle = styled.div`
     height: 1rem;
     background: ${({ theme }) => theme.colors.accent};
     border-radius: 2px;
+  }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    font-size: 1rem;
+    padding-left: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+    
+    &::before {
+      top: 0.7em;
+    }
   }
 `;
 

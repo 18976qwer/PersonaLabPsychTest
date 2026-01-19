@@ -14,6 +14,11 @@ const SectionContainer = styled(motion.div)`
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(0,0,0,0.02);
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    padding: 1.2rem;
+    margin-top: 1.5rem;
+  }
 `;
 
 const Header = styled.div`
@@ -58,6 +63,11 @@ const AvatarRow = styled.div`
   display: flex;
   gap: 1.2rem;
   align-items: flex-start;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
 `;
 
 const Avatar = styled.div`
@@ -72,6 +82,12 @@ const Avatar = styled.div`
   font-size: 1.8rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   flex-shrink: 0;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
 `;
 
 const ChatBubble = styled.div`
@@ -82,6 +98,7 @@ const ChatBubble = styled.div`
   position: relative;
   flex-grow: 1;
   border: 1px solid rgba(0,0,0,0.03);
+  min-width: 0; /* Important for preventing overflow */
   
   &::before {
     content: '';
@@ -94,6 +111,16 @@ const ChatBubble = styled.div`
     border-width: 0 12px 12px 0;
     border-color: transparent #f7fafc transparent transparent;
   }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    padding: 1rem;
+    border-radius: 12px;
+    margin-top: 0.5rem;
+    
+    &::before {
+      display: none;
+    }
+  }
 `;
 
 const PromptText = styled.div`
@@ -103,6 +130,12 @@ const PromptText = styled.div`
   white-space: pre-wrap;
   margin-bottom: 1rem;
   font-family: ${({ theme }) => theme.fonts.main};
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    word-break: break-word;
+  }
 `;
 
 const CopyButton = styled.button`
@@ -126,6 +159,14 @@ const CopyButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadows.hover};
+  }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    position: static;
+    margin-bottom: 0.8rem;
+    width: 100%;
+    justify-content: center;
+    padding: 0.6rem;
   }
 `;
 

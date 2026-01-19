@@ -50,6 +50,12 @@ const FooterActions = styled.div`
   @media print {
     display: none;
   }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 1rem;
+  }
 `;
 
 const ActionButton = styled.button<{ $primary?: boolean }>`
@@ -71,6 +77,12 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadows.hover};
+  }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    width: 100%;
+    justify-content: center;
+    padding: 1rem;
   }
 `;
 

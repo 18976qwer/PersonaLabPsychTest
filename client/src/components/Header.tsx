@@ -18,6 +18,10 @@ const HeaderContainer = styled.header`
   left: 0;
   right: 0;
   z-index: 1000;
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    padding: 0.8rem 1rem;
+    gap: 0.5rem;
+  }
 `;
 
 const Logo = styled.div<{ $clickable: boolean }>`
@@ -59,6 +63,11 @@ const ProgressContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    margin: 0 1rem;
+    max-width: 120px;
+  }
 `;
 
 const ProgressBar = styled.div`
@@ -80,6 +89,20 @@ const ProgressText = styled.span`
   font-size: 0.75rem;
   color: ${({ theme }) => theme.colors.textLight};
   text-align: center;
+  white-space: nowrap;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    font-size: 0.7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    &.desktop-text {
+      display: none;
+    }
+    &.mobile-text {
+      display: block !important;
+    }
+  }
 `;
 
 const LanguageSwitcher = styled.div`
@@ -138,6 +161,9 @@ export const Header: React.FC = () => {
   };
 
   const percentage = total > 0 ? Math.round((progress / total) * 100) : 0;
+  
+  // Mobile check could be done via CSS or hook, but for text content, CSS is better
+  // We'll use a simplified text structure that CSS can control
 
   return (
     <>
@@ -154,7 +180,12 @@ export const Header: React.FC = () => {
             <ProgressBar>
               <ProgressFill $progress={percentage} />
             </ProgressBar>
-            <ProgressText>{progress} / {total} {t('header.progress')} ({percentage}%)</ProgressText>
+            <ProgressText className="desktop-text">
+              {progress} / {total} {t('header.progress')} ({percentage}%)
+            </ProgressText>
+            <ProgressText className="mobile-text" style={{ display: 'none' }}>
+              {progress}/{total} ({percentage}%)
+            </ProgressText>
           </ProgressContainer>
         )}
 
