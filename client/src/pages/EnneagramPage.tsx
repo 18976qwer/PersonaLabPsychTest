@@ -99,12 +99,12 @@ const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
 
 const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 0.5rem;
   justify-items: center;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(9, 1fr);
     max-height: 300px;
     overflow-y: auto;
     width: 100%;

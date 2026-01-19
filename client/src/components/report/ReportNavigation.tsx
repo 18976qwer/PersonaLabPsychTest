@@ -49,7 +49,7 @@ const ExpandedMenu = styled(motion.div)`
   overflow-y: auto;
 `;
 
-const MenuItem = styled.a`
+const MenuItem = styled.div`
   display: block;
   padding: 0.8rem 1.5rem;
   color: ${({ theme }) => theme.colors.text};
@@ -57,6 +57,7 @@ const MenuItem = styled.a`
   font-size: 0.95rem;
   font-weight: 500;
   border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
   
   &:last-child {
     border-bottom: none;
