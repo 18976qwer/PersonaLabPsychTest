@@ -104,13 +104,6 @@ const MetaItem = styled.div`
   font-weight: 500;
 `;
 
-const MetaDot = styled.span`
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: ${({ theme }) => theme.colors.primary};
-`;
-
 const FeatureGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
