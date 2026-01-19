@@ -19,7 +19,7 @@ const LandingContainer = styled.main`
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     gap: 1rem;
-    padding: 1rem 0;
+    padding: 6rem 1rem 1rem;
     min-height: calc(100vh - 140px);
   }
 `;

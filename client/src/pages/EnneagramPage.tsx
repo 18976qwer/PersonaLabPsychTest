@@ -108,23 +108,6 @@ const MobileProgressHeader = styled.div`
 
 const MobileProgressPreview = styled.div`
   display: none;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding: 0.2rem 0;
-    flex: 1;
-    margin-left: 1rem;
-    margin-right: 0.5rem;
-    
-    /* Hide scrollbar but keep functionality */
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
 `;
 
 const QuestionNumber = styled.button<{ $status: 'answered' | 'active' | 'normal' }>`

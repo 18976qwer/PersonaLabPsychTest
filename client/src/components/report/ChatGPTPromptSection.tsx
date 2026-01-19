@@ -84,9 +84,7 @@ const Avatar = styled.div`
   flex-shrink: 0;
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
+    display: none;
   }
 `;
 
@@ -113,9 +111,12 @@ const ChatBubble = styled.div`
   }
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    padding: 1rem;
-    border-radius: 12px;
-    margin-top: 0.5rem;
+    padding: 0;
+    border-radius: 0;
+    margin-top: 0;
+    background: transparent;
+    box-shadow: none;
+    border: none;
     
     &::before {
       display: none;
@@ -135,6 +136,10 @@ const PromptText = styled.div`
     font-size: 0.9rem;
     line-height: 1.6;
     word-break: break-word;
+    background: #f7fafc;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.05);
   }
 `;
 
@@ -163,10 +168,11 @@ const CopyButton = styled.button`
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     position: static;
-    margin-bottom: 0.8rem;
+    margin-bottom: 1rem;
     width: 100%;
     justify-content: center;
-    padding: 0.6rem;
+    padding: 0.8rem;
+    border-radius: 12px;
   }
 `;
 

@@ -130,6 +130,10 @@ npm start       # 等价于 node dist/index.js
 - 本地存储与安全：
   - 使用 `StorageManager` 封装 localStorage
   - 使用 `crypto-js` 进行 AES 加密（兼容旧版逻辑）
+- 移动端深度适配：
+  - 首页标题与排版自适应
+  - 测试页答题进度栏在移动端自动折叠，支持悬浮预览
+  - 结果页卡片与图表在小屏设备上的布局优化
 - 界面与交互：
   - 使用 `styled-components` 构建响应式 UI
   - 使用 `framer-motion` 提供动效
