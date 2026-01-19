@@ -61,6 +61,8 @@ const SidebarContent = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     padding: 0;
     margin-bottom: 0.5rem;
+    background: transparent;
+    box-shadow: none;
     
     h3 {
       margin-bottom: 0;
@@ -81,13 +83,14 @@ const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
     left: 0;
     right: 0;
     background: white;
-    padding: 1rem;
+    padding: 0.5rem 1rem 1rem 1rem;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     z-index: 100;
     border-radius: 0 0 12px 12px;
     max-height: 300px;
     overflow-y: auto;
     grid-template-columns: repeat(4, 1fr);
+    margin-top: 0;
   }
 `;
 
@@ -100,7 +103,11 @@ const MobileProgressHeader = styled.div`
     justify-content: space-between;
     width: 100%;
     position: relative;
-    padding: 1rem;
+    padding: 0.8rem 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    z-index: 101;
   }
 `;
 
@@ -267,6 +274,14 @@ const TestButton = styled.button`
   &:hover {
     opacity: 1;
   }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    z-index: 102;
+    position: relative;
+  }
 `;
 
 export const MBTIPage: React.FC = () => {
@@ -407,32 +422,42 @@ export const MBTIPage: React.FC = () => {
         <Sidebar>
           <SidebarContent>
             <MobileProgressHeader onClick={() => setIsExpanded(!isExpanded)}>
-              <h3>{t('mbti.progress') || 'Progress'}</h3>
-              <MobileProgressPreview>
-                {mbtiQuestions.map((q, idx) => {
-                  const isAnswered = !!answers[q.id];
-                  const isCurrent = currentQuestionId === q.id;
-                  const currentIndex = mbtiQuestions.findIndex(mq => mq.id === currentQuestionId);
-                  
-                  if (Math.abs(idx - currentIndex) > 2 && idx !== 0 && idx !== mbtiQuestions.length - 1) return null;
-                  
-                  return (
-                    <QuestionNumber
-                      key={q.id}
-                      $status={isAnswered ? 'answered' : isCurrent ? 'active' : 'normal'}
-                      style={{ minWidth: '30px', width: '30px', height: '30px', fontSize: '0.8rem' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        scrollToQuestion(q.id);
-                      }}
-                    >
-                      {idx + 1}
-                    </QuestionNumber>
-                  );
-                })}
-              </MobileProgressPreview>
-              <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                ▼
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem' }}>{t('mbti.progress') || 'Progress'}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                     <MobileProgressPreview>
+                      {mbtiQuestions.map((q, idx) => {
+                        const isAnswered = !!answers[q.id];
+                        const isCurrent = currentQuestionId === q.id;
+                        const currentIndex = mbtiQuestions.findIndex(mq => mq.id === currentQuestionId);
+                        
+                        if (Math.abs(idx - currentIndex) > 2 && idx !== 0 && idx !== mbtiQuestions.length - 1) return null;
+                        
+                        return (
+                          <QuestionNumber
+                            key={q.id}
+                            $status={isAnswered ? 'answered' : isCurrent ? 'active' : 'normal'}
+                            style={{ minWidth: '24px', width: '24px', height: '24px', fontSize: '0.7rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              scrollToQuestion(q.id);
+                            }}
+                          >
+                            {idx + 1}
+                          </QuestionNumber>
+                        );
+                      })}
+                    </MobileProgressPreview>
+                    <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                      ▼
+                    </div>
+                  </div>
+                </div>
+                <TestButton onClick={(e) => {
+                  e.stopPropagation();
+                  fillAllAnswers();
+                }}>测试专用：一键填写</TestButton>
               </div>
             </MobileProgressHeader>
 
@@ -463,7 +488,7 @@ export const MBTIPage: React.FC = () => {
                 );
               })}
             </QuestionGrid>
-            <TestButton onClick={fillAllAnswers}>测试专用：一键填写</TestButton>
+            <TestButton className="desktop-only" onClick={fillAllAnswers}>测试专用：一键填写</TestButton>
           </SidebarContent>
         </Sidebar>
 

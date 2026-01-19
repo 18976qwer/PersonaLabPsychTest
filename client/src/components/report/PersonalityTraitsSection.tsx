@@ -11,7 +11,7 @@ import { ProcessList, ProcessItem, ProcessContent } from '../common/ResponsiveSt
 const SectionHeader = styled.h3`
   font-size: 1.4rem;
   color: ${({ theme }) => theme.colors.text};
-  margin: 3rem 0 1.5rem 0;
+  margin: 1.5rem 0 1.5rem 0;
   display: flex;
   align-items: center;
   gap: 0.8rem;

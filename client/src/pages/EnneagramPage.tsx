@@ -64,6 +64,8 @@ const SidebarContent = styled.div`
     padding: 0;
     max-height: none;
     margin-bottom: 0.5rem;
+    background: transparent;
+    box-shadow: none;
     
     h3 {
       margin-bottom: 0;
@@ -84,13 +86,14 @@ const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
     left: 0;
     right: 0;
     background: white;
-    padding: 1rem;
+    padding: 0.5rem 1rem 1rem 1rem;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     z-index: 100;
     border-radius: 0 0 12px 12px;
     max-height: 300px;
     overflow-y: auto;
     grid-template-columns: repeat(5, 1fr);
+    margin-top: 0;
   }
 `;
 
@@ -103,7 +106,11 @@ const MobileProgressHeader = styled.div`
     justify-content: space-between;
     width: 100%;
     position: relative;
-    padding: 1rem;
+    padding: 0.8rem 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    z-index: 101;
   }
 `;
 
@@ -177,6 +184,14 @@ const TestButton = styled.button`
   
   &:hover {
     opacity: 1;
+  }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    z-index: 102;
+    position: relative;
   }
 `;
 
@@ -416,34 +431,44 @@ export const EnneagramPage: React.FC = () => {
         <Sidebar>
           <SidebarContent>
             <MobileProgressHeader onClick={() => setIsExpanded(!isExpanded)}>
-              <h3>{t('mbti.progress') || (language === 'zh' ? '答题进度' : 'Progress')}</h3>
-              <MobileProgressPreview>
-                {enneagramQuestions.map((q) => {
-                  const isAnswered = answers[q.id] !== undefined;
-                  const isActive = q.id === activeQuestionId;
-                  
-                  // Only show a few bubbles around current question
-                  const currentIndex = enneagramQuestions.findIndex(eq => eq.id === activeQuestionId);
-                  const qIndex = enneagramQuestions.findIndex(eq => eq.id === q.id);
-                  if (Math.abs(qIndex - currentIndex) > 2 && qIndex !== 0 && qIndex !== enneagramQuestions.length - 1) return null;
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem' }}>{t('mbti.progress') || (language === 'zh' ? '答题进度' : 'Progress')}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <MobileProgressPreview>
+                      {enneagramQuestions.map((q) => {
+                        const isAnswered = answers[q.id] !== undefined;
+                        const isActive = q.id === activeQuestionId;
+                        
+                        // Only show a few bubbles around current question
+                        const currentIndex = enneagramQuestions.findIndex(eq => eq.id === activeQuestionId);
+                        const qIndex = enneagramQuestions.findIndex(eq => eq.id === q.id);
+                        if (Math.abs(qIndex - currentIndex) > 2 && qIndex !== 0 && qIndex !== enneagramQuestions.length - 1) return null;
 
-                  return (
-                    <QuestionNumber
-                      key={q.id}
-                      $status={isAnswered ? 'answered' : isActive ? 'active' : 'normal'}
-                      style={{ minWidth: '30px', width: '30px', height: '30px', fontSize: '0.8rem' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSidebarClick(q.id);
-                      }}
-                    >
-                      {q.id}
-                    </QuestionNumber>
-                  );
-                })}
-              </MobileProgressPreview>
-              <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                ▼
+                        return (
+                          <QuestionNumber
+                            key={q.id}
+                            $status={isAnswered ? 'answered' : isActive ? 'active' : 'normal'}
+                            style={{ minWidth: '24px', width: '24px', height: '24px', fontSize: '0.7rem' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSidebarClick(q.id);
+                            }}
+                          >
+                            {q.id}
+                          </QuestionNumber>
+                        );
+                      })}
+                    </MobileProgressPreview>
+                    <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                      ▼
+                    </div>
+                  </div>
+                </div>
+                <TestButton onClick={(e) => {
+                  e.stopPropagation();
+                  fillAllAnswers();
+                }}>测试专用：一键填写</TestButton>
               </div>
             </MobileProgressHeader>
 
@@ -473,7 +498,7 @@ export const EnneagramPage: React.FC = () => {
                 );
               })}
             </QuestionGrid>
-            <TestButton onClick={fillAllAnswers}>测试专用：一键填写</TestButton>
+            <TestButton className="desktop-only" onClick={fillAllAnswers}>测试专用：一键填写</TestButton>
           </SidebarContent>
         </Sidebar>
 
