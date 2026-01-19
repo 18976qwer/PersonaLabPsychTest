@@ -34,14 +34,12 @@ const Sidebar = styled.div`
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     width: 100%;
-    position: fixed;
-    top: 58px;
-    left: 0;
-    right: 0;
+    position: sticky;
+    top: 60px;
     z-index: 100;
     background: ${({ theme }) => theme.colors.background};
-    padding: 0.5rem 0 0 0;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    padding: 0;
+    margin-top: 0;
   }
 `;
 
@@ -64,9 +62,8 @@ const SidebarContent = styled.div`
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     padding: 0;
     margin-bottom: 0;
-    box-shadow: none;
-    border-radius: 0;
     background: transparent;
+    box-shadow: none;
     
     h3 {
       margin-bottom: 0;
@@ -87,6 +84,8 @@ const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     z-index: 100;
     border-radius: 0 0 12px 12px;
+    margin-top: 0;
+    border-top: none;
   }
 `;
 
@@ -94,11 +93,13 @@ const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
+  justify-items: center;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     grid-template-columns: repeat(4, 1fr);
     max-height: 300px;
     overflow-y: auto;
+    width: 100%;
   }
 `;
 
@@ -112,6 +113,9 @@ const MobileProgressHeader = styled.div`
     width: 100%;
     position: relative;
     padding: 1rem 1rem 0.5rem 1rem;
+    background: white;
+    border-radius: 12px 12px 0 0;
+    box-shadow: ${({ theme }) => theme.shadows.card};
   }
 `;
 
@@ -160,8 +164,9 @@ const QuestionNumber = styled.button<{ $status: 'answered' | 'error' | 'normal' 
   }}
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    width: 40px;
-    height: 40px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
     flex-shrink: 0;
   }
 `;
@@ -172,7 +177,7 @@ const MainContent = styled.div`
   margin-top: 0.4rem;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    margin-top: 100px;
+    margin-top: 0;
   }
 `;
 
@@ -180,7 +185,7 @@ const PageTitle = styled.h2`
   margin: 0.7rem 0 1.3rem;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    margin-top: 0;
+    margin-top: 0.5rem;
   }
 `;
 

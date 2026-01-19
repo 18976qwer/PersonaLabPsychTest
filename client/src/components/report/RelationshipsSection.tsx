@@ -413,7 +413,7 @@ export const RelationshipsSection: React.FC<Props> = ({
         </ContentBox>
       </IntimacyGrid>
 
-      <SubHeader style={{ marginTop: '4rem' }}><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
+      <SubHeader><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
       <GrowthContainer>
         {[
           { title: t('report.relationshipsSection.growth.awarenessTitle'), data: growthData.awareness, number: 1 },
