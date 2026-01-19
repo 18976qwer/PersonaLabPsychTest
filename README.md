@@ -177,6 +177,7 @@ npm start       # 等价于 node dist/index.js
   - `client/src/pages/AIAnalysisPage.tsx`
 - 报告模块组件：
   - `client/src/components/report/ReadingGuideSection.tsx`
+  - `client/src/components/report/DataVisualizationSection.tsx`
   - `client/src/components/report/PersonalityTraitsSection.tsx`
   - `client/src/components/report/PersonalGrowthSection.tsx`
   - `client/src/components/report/CareerPathSection.tsx`

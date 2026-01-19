@@ -1,6 +1,6 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
-import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Customized } from 'recharts';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -109,15 +109,6 @@ const SliderTrack = styled.div<{ $color: string }>`
   position: relative;
 `;
 
-const SliderCenterMarker = styled.div`
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 100%;
-  background: rgba(0,0,0,0.08);
-  z-index: 1;
-`;
 
 const SliderTrackFill = styled(motion.div)<{ $color: string; $percent: number }>`
   position: absolute;
@@ -130,20 +121,6 @@ const SliderTrackFill = styled(motion.div)<{ $color: string; $percent: number }>
   z-index: 0;
 `;
 
-const SliderThumb = styled(motion.div)<{ $color: string; $percent: number }>`
-  position: absolute;
-  top: 50%;
-  left: ${({ $percent }) => `${$percent}%`};
-  transform: translate(-50%, -60%);
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.white};
-  border: 2px solid ${({ $color }) => $color};
-  box-shadow: 0 0 0 2px ${({ theme }) => `${theme.colors.white}cc`}, 0 4px 10px rgba(0, 0, 0, 0.12);
-  z-index: 2;
-  margin-top: -1px;
-`;
 
 const AxisLabels = styled.div`
   display: flex;
@@ -166,21 +143,6 @@ interface Props {
   dimensions: DimensionData[];
 }
 
-const renderCustomizedLabel = (props: any) => {
-  const { payload, x, y, cx, cy, ...rest } = props;
-  const dataValue = payload.value; 
-  // We need to access the actual data point value. Recharts passes payload object which contains coordinate info.
-  // The 'value' in payload is the axis tick label (e.g. "E / I"). 
-  // To get the numeric value, we might need to look at the data passed to RadarChart or find another way.
-  // A simpler way for RadarChart labels is to render a separate layer if Recharts doesn't support value labels easily on Radar.
-  // However, PolarAngleAxis supports custom tick.
-  
-  return (
-    <text x={x} y={y} textAnchor="middle" fill="#666" fontSize={12}>
-      {payload.value}
-    </text>
-  );
-};
 
 export const DataVisualizationSection: React.FC<Props> = ({ mbtiType, dimensions }) => {
   const theme = useTheme();
