@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AIReportData } from '../types/report';
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+const DEEPSEEK_API_URL = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 
 export const generateDeepSeekReport = async (
   mbti: string, 

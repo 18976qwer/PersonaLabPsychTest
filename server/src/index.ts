@@ -12,7 +12,14 @@ const PORT = process.env.PORT || 3000;
 
 // Security Middleware
 app.use(helmet());
-app.use(cors());
+const allowedOrigins = [/vercel\.app$/, /onrender\.com$/, /localhost:5173$/];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.some(re => re.test(origin))) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  }
+}));
 app.use(express.json({ limit: '10kb' })); // Limit body size
 
 // Rate Limiting

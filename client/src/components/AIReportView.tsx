@@ -111,8 +111,10 @@ export const AIReportView: React.FC<AIReportViewProps> = ({ data }) => {
            <SubSection>
             <SubTitle>⚡ {t('results.keyStrengths')}</SubTitle>
             <List>
-              {data.combo.strengths.map((item, index) => (
-                <ListItem key={index}>{item}</ListItem>
+              {data.combo.strengths?.map((item, index) => (
+                <ListItem key={index}>
+                  <strong>{(item as any).title}</strong>：{(item as any).desc}
+                </ListItem>
               ))}
             </List>
           </SubSection>
@@ -120,8 +122,10 @@ export const AIReportView: React.FC<AIReportViewProps> = ({ data }) => {
           <SubSection>
             <SubTitle>⚔️ {t('results.conflicts') || 'Internal Conflicts'}</SubTitle>
             <List>
-              {data.combo.conflicts.map((item, index) => (
-                <ListItem key={index}>{item}</ListItem>
+              {data.combo.conflicts?.map((item, index) => (
+                <ListItem key={index}>
+                  <strong>{(item as any).title}</strong>：{(item as any).desc}
+                </ListItem>
               ))}
             </List>
           </SubSection>
