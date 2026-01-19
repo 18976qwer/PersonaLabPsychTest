@@ -23,10 +23,6 @@ const ContentWrapper = styled.div`
   @media (max-width: 1200px) {
     max-width: 100%;
   }
-
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    padding-top: 8.5rem;
-  }
 `;
 
 const MainContent = styled.main`
@@ -37,13 +33,23 @@ interface Props {
   children: ReactNode;
 }
 
+const MobileNavSpacer = styled.div`
+  display: none;
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    display: block;
+    height: 50px; /* Adjust based on ReportNavigation height */
+    margin-bottom: 1rem;
+  }
+`;
+
 export const ReportLayout: React.FC<Props> = ({ children }) => {
   return (
     <PageContainer>
       <ScrollProgress />
       <ContentWrapper>
-        <AiSettingsPanel />
         <ReportNavigation />
+        <MobileNavSpacer />
+        <AiSettingsPanel />
         <MainContent>
           {children}
         </MainContent>

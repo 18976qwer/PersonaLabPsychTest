@@ -13,17 +13,10 @@ export const AiProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAiEnabled, setIsAiEnabledState] = useState(false);
   const [aiLoading, setAiLoadingState] = useState(false);
 
-  useEffect(() => {
-    const storedEnabled = localStorage.getItem('ai_enabled');
-
-    if (storedEnabled) {
-      setIsAiEnabledState(JSON.parse(storedEnabled));
-    }
-  }, []);
+  // Removed localStorage persistence to ensure AI starts disabled by default
 
   const setIsAiEnabled = (enabled: boolean) => {
     setIsAiEnabledState(enabled);
-    localStorage.setItem('ai_enabled', JSON.stringify(enabled));
   };
 
   return (

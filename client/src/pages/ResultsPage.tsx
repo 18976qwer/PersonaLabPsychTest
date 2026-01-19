@@ -247,7 +247,7 @@ type SectionKey = 'traits' | 'growth' | 'career' | 'relationships' | 'summary';
 export const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { isAiEnabled, aiLoading, setAiLoading } = useAi();
+  const { isAiEnabled, setIsAiEnabled, aiLoading, setAiLoading } = useAi();
   const { t, language } = useLanguage();
   const [reportData, setReportData] = useState<AnalysisResult>(mockAnalysisData);
   const [aiReport, setAiReport] = useState<AIReportData | null>(null);
@@ -349,10 +349,6 @@ export const ResultsPage: React.FC = () => {
       color: theme.colors.mbti.P
     }
   ];
-
-  useEffect(() => {
-    setIsAiEnabled(false);
-  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
