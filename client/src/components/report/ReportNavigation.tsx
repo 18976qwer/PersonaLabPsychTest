@@ -83,17 +83,25 @@ export const ReportNavigation: React.FC = () => {
 
   const handleScroll = (id: string) => {
     setIsOpen(false);
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 120; // Header + Nav height compensation
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      const offsetPosition = elementPosition - offset;
+    // Use setTimeout to allow state updates and layout shifts (if any) to settle
+    setTimeout(() => {
+      const element = document.getElementById(id);
+      if (element) {
+        // Mobile breakpoint from theme is 480px
+        const isMobile = window.innerWidth <= 480;
+        // Mobile: Header (56px) + Nav (approx 50px) + padding
+        // Desktop: Header (56px) + padding
+        const offset = isMobile ? 140 : 80;
+        
+        const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+        const offsetPosition = elementPosition - offset;
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 100);
   };
 
   return (
