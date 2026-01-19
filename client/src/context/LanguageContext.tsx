@@ -60,7 +60,35 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    const fallbackLanguage: Language = 'zh';
+
+    const t = (key: string, options?: any): any => {
+      const keys = key.split('.');
+      let value: any = translations[fallbackLanguage];
+
+      for (const k of keys) {
+        if (value && value[k]) {
+          value = value[k];
+        } else {
+          return key;
+        }
+      }
+
+      if (typeof value === 'string' && options && typeof options === 'object') {
+        return value.replace(/\{(\w+)\}/g, (_match, k: string) => {
+          const replacement = options[k];
+          return replacement !== undefined && replacement !== null ? String(replacement) : _match;
+        });
+      }
+
+      return value;
+    };
+
+    return {
+      language: fallbackLanguage,
+      setLanguage: () => {},
+      t
+    };
   }
   return context;
 };

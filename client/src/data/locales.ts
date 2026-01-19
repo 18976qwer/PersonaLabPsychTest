@@ -78,7 +78,7 @@ export const translations = {
       disclaimerLink: '免责声明'
     },
     report: {
-      pageTitle: '全维度人格诊断报告',
+      pageTitle: '人格测试报告',
       navTitle: '目录',
       readingGuide: '阅读指引',
       traits: '人格特质',
@@ -117,7 +117,7 @@ export const translations = {
           ]
         },
         faq: {
-          title: '报告能为你解答什么？',
+          title: '报告可以解答什么？',
           questions: [
             {
               title: '“我为什么总是这样？”',
@@ -377,7 +377,7 @@ export const translations = {
       disclaimerLink: 'Disclaimer'
     },
     report: {
-      pageTitle: 'Comprehensive Personality Diagnostic Report',
+      pageTitle: 'Personality Test Report',
       navTitle: 'Contents',
       readingGuide: 'Reading Guide',
       traits: 'Personality Traits',

@@ -32,9 +32,11 @@ const Title = styled(motion.h1)`
   font-weight: 800;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     padding: 0 0.5rem;
     line-height: 1.3;
+    word-break: keep-all; /* 防止中文换行断词 */
+    white-space: normal;
   }
 `;
 
@@ -43,6 +45,7 @@ const TitleHighlight = styled.span`
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  display: inline-block; /* 确保渐变背景在inline元素上正常显示 */
 `;
 
 const Subtitle = styled(motion.p)`

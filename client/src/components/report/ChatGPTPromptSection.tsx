@@ -201,7 +201,7 @@ export const ChatGPTPromptSection: React.FC<Props> = ({ prompt }) => {
     >
       <Header>
         <h3>
-          <FaRobot /> {language === 'zh' ? 'AI 心理咨询师深度对话' : 'Deep-dive conversation with an AI counselor'}
+          <FaRobot /> {language === 'zh' ? 'AI深度对话' : 'AI Deep Conversation'}
         </h3>
         <p>
           {language === 'zh'

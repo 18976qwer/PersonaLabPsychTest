@@ -49,36 +49,81 @@ const SidebarContent = styled.div`
   box-shadow: ${({ theme }) => theme.shadows.card};
   max-height: calc(100vh - 4rem);
   overflow-y: auto;
+  margin-bottom: 2rem;
 
   h3 {
     margin-bottom: 1rem;
     font-size: 1.1rem;
     color: ${({ theme }) => theme.colors.text};
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    overflow-x: auto;
-    white-space: nowrap;
+    max-height: none;
+    margin-bottom: 1.5rem;
     
     h3 {
-      margin: 0;
-      white-space: nowrap;
+      margin-bottom: 0;
+      cursor: pointer;
     }
   }
 `;
 
-const QuestionGrid = styled.div`
+const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 0.5rem;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    display: ${({ $isExpanded }) => $isExpanded ? 'grid' : 'none'};
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+    border-radius: 0 0 12px 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    grid-template-columns: repeat(5, 1fr);
+  }
+`;
+
+const MobileProgressHeader = styled.div`
+  display: none;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+  }
+`;
+
+const MobileProgressPreview = styled.div`
+  display: none;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     display: flex;
     gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.2rem 0;
+    flex: 1;
+    margin-left: 1rem;
+    margin-right: 0.5rem;
+    
+    /* Hide scrollbar but keep functionality */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 `;
 
@@ -247,6 +292,7 @@ export const EnneagramPage: React.FC = () => {
   const navigate = useNavigate();
   const { setProgress, setTotal, setShowProgress } = useTestProgress();
   const { language, t } = useLanguage();
+  const [isExpanded, setIsExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [pendingScrollTo, setPendingScrollTo] = useState<number | null>(null);
@@ -381,8 +427,46 @@ export const EnneagramPage: React.FC = () => {
       <PageLayout>
         <Sidebar>
           <SidebarContent>
-            <h3>{t('mbti.progress') || (language === 'zh' ? '答题进度' : 'Progress')}</h3>
-            <QuestionGrid>
+            <MobileProgressHeader onClick={() => setIsExpanded(!isExpanded)}>
+              <h3>{t('mbti.progress') || (language === 'zh' ? '答题进度' : 'Progress')}</h3>
+              <MobileProgressPreview>
+                {enneagramQuestions.map((q) => {
+                  const isAnswered = answers[q.id] !== undefined;
+                  const isActive = q.id === activeQuestionId;
+                  
+                  // Only show a few bubbles around current question
+                  const currentIndex = enneagramQuestions.findIndex(eq => eq.id === activeQuestionId);
+                  const qIndex = enneagramQuestions.findIndex(eq => eq.id === q.id);
+                  if (Math.abs(qIndex - currentIndex) > 2 && qIndex !== 0 && qIndex !== enneagramQuestions.length - 1) return null;
+
+                  return (
+                    <QuestionNumber
+                      key={q.id}
+                      $status={isAnswered ? 'answered' : isActive ? 'active' : 'normal'}
+                      style={{ minWidth: '30px', width: '30px', height: '30px', fontSize: '0.8rem' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSidebarClick(q.id);
+                      }}
+                    >
+                      {q.id}
+                    </QuestionNumber>
+                  );
+                })}
+              </MobileProgressPreview>
+              <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                ▼
+              </div>
+            </MobileProgressHeader>
+
+            <h3 className="desktop-only" style={{ display: 'none' }}>{t('mbti.progress') || (language === 'zh' ? '答题进度' : 'Progress')}</h3>
+            <style>{`
+              @media (min-width: 769px) {
+                .desktop-only { display: block !important; }
+              }
+            `}</style>
+
+            <QuestionGrid $isExpanded={isExpanded}>
               {enneagramQuestions.map((q) => {
                 const isAnswered = answers[q.id] !== undefined;
                 const isActive = q.id === activeQuestionId;
@@ -391,7 +475,10 @@ export const EnneagramPage: React.FC = () => {
                   <QuestionNumber
                     key={q.id}
                     $status={isAnswered ? 'answered' : isActive ? 'active' : 'normal'}
-                    onClick={() => handleSidebarClick(q.id)}
+                    onClick={() => {
+                      handleSidebarClick(q.id);
+                      setIsExpanded(false);
+                    }}
                   >
                     {q.id}
                   </QuestionNumber>

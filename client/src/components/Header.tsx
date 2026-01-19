@@ -110,6 +110,10 @@ const LanguageSwitcher = styled.div`
   align-items: center;
   gap: 0.5rem;
   font-size: 1rem;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    white-space: nowrap;
+  }
 `;
 
 const LanguageItem = styled.span<{ $active: boolean; $disabled?: boolean }>`

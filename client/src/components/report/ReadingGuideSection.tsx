@@ -272,6 +272,11 @@ const ListItem = styled.li`
 
 const StepList = styled(StyledList)`
   counter-reset: step;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const StepItem = styled(ListItem)`
@@ -279,12 +284,16 @@ const StepItem = styled(ListItem)`
   padding-right: 3rem;
   border-left: none;
   background: linear-gradient(135deg, ${({ theme }) => theme.colors.background} 0%, ${({ theme }) => `${theme.colors.primary}10`} 100%);
+  display: flex;
+  align-items: center;
+  min-height: 5rem;
   
   &::after {
     counter-increment: step;
     content: counter(step, decimal-leading-zero);
     position: absolute;
-    top: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
     right: 1.2rem;
     font-size: 2.4rem;
     font-weight: 800;
@@ -293,12 +302,13 @@ const StepItem = styled(ListItem)`
   }
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    padding-right: 1rem;
+    padding: 1.5rem;
+    padding-right: 1.5rem;
+    justify-content: center;
+    text-align: center;
     
     &::after {
-      font-size: 1.8rem;
-      right: 0.8rem;
-      top: 0.5rem;
+      display: none; /* 移动端隐藏大数字，避免遮挡或干扰居中 */
     }
   }
 `;
