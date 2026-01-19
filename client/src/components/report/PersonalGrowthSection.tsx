@@ -229,7 +229,7 @@ const ListUl = styled.ul`
 const SubHeader = styled.h3`
   font-size: 1.2rem;
   color: ${({ theme }) => theme.colors.text};
-  margin: 1.5rem 0 1rem 0;
+  margin: 0 0 1rem 0;
   display: flex;
   align-items: center;
   gap: 0.6rem;

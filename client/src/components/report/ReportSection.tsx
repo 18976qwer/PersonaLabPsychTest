@@ -12,7 +12,7 @@ const SectionHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 1rem;
 `;
