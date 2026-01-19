@@ -255,22 +255,59 @@ export const ResultsPage: React.FC = () => {
   const [reportId] = useState(() => Math.random().toString(36).substr(2, 9).toUpperCase());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Track which sections have AI enabled
-  const [sectionAiEnabled, setSectionAiEnabled] = useState<Record<SectionKey, boolean>>({
-    traits: false,
-    growth: false,
-    career: false,
-    relationships: false,
-    summary: false
-  });
+  // Trigger AI fetch when enabled globally
+  useEffect(() => {
+    if (isAiEnabled) {
+      // Check if we already have data
+      const hasFullData = aiReport && 
+        aiReport.traits && 
+        aiReport.growth && 
+        aiReport.career && 
+        aiReport.relationships && 
+        aiReport.summary;
 
-  const [sectionLoading, setSectionLoading] = useState<Record<SectionKey, boolean>>({
-    traits: false,
-    growth: false,
-    career: false,
-    relationships: false,
-    summary: false
-  });
+      if (!hasFullData && !aiLoading) {
+        setAiLoading(true);
+        const mbtiResult = StorageManager.getItem<string>('mbti_result');
+        const enneagramResult = StorageManager.getItem<any>('enneagram_result');
+        
+        if (!mbtiResult || !enneagramResult) {
+          setAiLoading(false);
+          return;
+        }
+
+        const lang = language === 'zh' ? 'zh' : 'en';
+
+        fetchDeepSeekAnalysis(
+          mbtiResult,
+          String(enneagramResult.mainType),
+          String(enneagramResult.subtype),
+          lang
+        )
+          .then(data => {
+            if (data) {
+              setAiReport(prev => {
+                if (!prev) return data as AIReportData;
+                return {
+                  ...prev,
+                  ...data
+                };
+              });
+              setAiError(null);
+            } else {
+              setAiError(t('results.aiNoData'));
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            setAiError(t('results.aiError'));
+          })
+          .finally(() => {
+            setAiLoading(false);
+          });
+      }
+    }
+  }, [isAiEnabled, language, t, aiReport, aiLoading]);
 
   const mbtiLetterCounts = StorageManager.getItem<Record<string, number>>('mbti_letter_counts') || {};
 
@@ -313,85 +350,6 @@ export const ResultsPage: React.FC = () => {
     }
   ];
 
-  // Toggle AI for a specific section
-  const toggleSectionAi = (section: SectionKey) => {
-    setSectionAiEnabled(prev => {
-      const newState = { ...prev, [section]: !prev[section] };
-      if (newState[section]) {
-        const moduleMap: Record<string, string> = {
-          traits: 'traits',
-          growth: 'growth',
-          career: 'career',
-          relationships: 'relationships',
-          summary: 'summary'
-        };
-        
-        const hasData = aiReport && (aiReport as any)[moduleMap[section]] && 
-                        (Array.isArray((aiReport as any)[moduleMap[section]]) 
-                          ? (aiReport as any)[moduleMap[section]].length > 0 
-                          : Object.keys((aiReport as any)[moduleMap[section]]).length > 0);
-
-        if (!hasData) {
-           triggerAiFetch([moduleMap[section]], section);
-        }
-      }
-      return newState;
-    });
-  };
-
-  const triggerAiFetch = (modules: string[] = [], section?: SectionKey) => {
-    const mbtiResult = StorageManager.getItem<string>('mbti_result');
-    const enneagramResult = StorageManager.getItem<any>('enneagram_result');
-    
-    if (!mbtiResult || !enneagramResult) return;
-
-    if (section) {
-      setSectionLoading(prev => ({ ...prev, [section]: true }));
-    }
-    setAiLoading(true);
-    const lang = language === 'zh' ? 'zh' : 'en';
-
-    fetchDeepSeekAnalysis(
-      mbtiResult,
-      String(enneagramResult.mainType),
-      String(enneagramResult.subtype),
-      lang,
-      modules.length > 0 ? modules : undefined
-    )
-      .then(data => {
-        if (data) {
-          setAiReport(prev => {
-            if (!prev) return data as AIReportData;
-            return {
-              ...prev,
-              ...data
-            };
-          });
-          setAiError(null);
-        } else {
-          setAiError(t('results.aiNoData'));
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        setAiError(t('results.aiError'));
-      })
-      .finally(() => {
-        if (section) {
-          setSectionLoading(prev => {
-            const updated = { ...prev, [section]: false };
-            const anyLoading = Object.values(updated).some(v => v);
-            if (!anyLoading) {
-              setAiLoading(false);
-            }
-            return updated;
-          });
-        } else {
-          setAiLoading(false);
-        }
-      });
-  };
-
   useEffect(() => {
     window.scrollTo(0, 0);
 
@@ -408,19 +366,8 @@ export const ResultsPage: React.FC = () => {
     
     setAiReport(null);
     setAiError(null);
-    setSectionLoading({
-      traits: false,
-      growth: false,
-      career: false,
-      relationships: false,
-      summary: false
-    });
     setAiLoading(false);
-    
-    if (isAiEnabled) {
-       // Optional: could auto-enable all sections if global is true
-    }
-  }, [isAiEnabled, language, t]);
+  }, [language, t]);
 
   const handleRetest = () => {
     if (window.confirm(t('report.retestConfirm'))) {
@@ -491,42 +438,32 @@ export const ResultsPage: React.FC = () => {
       <PersonalityTraitsSection
         data={reportData.personalityTraits}
         aiReport={aiReport}
-        isAiEnabled={sectionAiEnabled.traits}
-        aiLoading={sectionLoading.traits}
-        onToggleAi={() => toggleSectionAi('traits')}
-        showAiToggle={true}
+        isAiEnabled={isAiEnabled}
+        aiLoading={aiLoading}
       />
       <PersonalGrowthSection 
         data={reportData.personalGrowth}
         aiReport={aiReport}
-        isAiEnabled={sectionAiEnabled.growth}
-        aiLoading={sectionLoading.growth}
-        onToggleAi={() => toggleSectionAi('growth')}
-        showAiToggle={true}
+        isAiEnabled={isAiEnabled}
+        aiLoading={aiLoading}
       />
       <CareerPathSection 
         data={reportData.careerPath}
         aiReport={aiReport}
-        isAiEnabled={sectionAiEnabled.career}
-        aiLoading={sectionLoading.career}
-        onToggleAi={() => toggleSectionAi('career')}
-        showAiToggle={true}
+        isAiEnabled={isAiEnabled}
+        aiLoading={aiLoading}
       />
       <RelationshipsSection 
         data={reportData.relationships}
         aiReport={aiReport}
-        isAiEnabled={sectionAiEnabled.relationships}
-        aiLoading={sectionLoading.relationships}
-        onToggleAi={() => toggleSectionAi('relationships')}
-        showAiToggle={true}
+        isAiEnabled={isAiEnabled}
+        aiLoading={aiLoading}
       />
       <ReportSummarySection 
         data={reportData.reportSummary}
         aiReport={aiReport}
-        isAiEnabled={sectionAiEnabled.summary}
-        aiLoading={sectionLoading.summary}
-        onToggleAi={() => toggleSectionAi('summary')}
-        showAiToggle={true}
+        isAiEnabled={isAiEnabled}
+        aiLoading={aiLoading}
       />
 
       <ChatGPTPromptSection prompt={reportData.chatgptPrompt} />

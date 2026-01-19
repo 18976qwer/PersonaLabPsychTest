@@ -7,13 +7,13 @@ const PanelContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   overflow: hidden;
   border: 1px solid #e2e8f0;
 `;
 
 const Header = styled.div`
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1rem;
   background: #f8fafc;
   display: flex;
   justify-content: space-between;
@@ -31,7 +31,7 @@ const Header = styled.div`
 `;
 
 const Content = styled.div<{ $isOpen: boolean }>`
-  padding: ${({ $isOpen }) => ($isOpen ? '1.5rem' : '0 1.5rem')};
+  padding: ${({ $isOpen }) => ($isOpen ? '1rem 1rem' : '0 1rem')};
   height: ${({ $isOpen }) => ($isOpen ? 'auto' : '0')};
   opacity: ${({ $isOpen }) => ($isOpen ? '1' : '0')};
   transition: all 0.3s ease;
@@ -39,7 +39,7 @@ const Content = styled.div<{ $isOpen: boolean }>`
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 `;
 
 const SwitchLabel = styled.label`

@@ -101,8 +101,9 @@ const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
   justify-items: center;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    grid-template-columns: repeat(4, 1fr);
-    max-height: 300px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.25rem;
+    max-height: 150px;
     overflow-y: auto;
     width: 100%;
   }
