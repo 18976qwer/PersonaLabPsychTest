@@ -7,6 +7,11 @@ const fadeInUp = keyframes`
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 `;
 
+const fadeOutDown = keyframes`
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to { opacity: 0; transform: translate3d(0, 100%, 0); }
+`;
+
 const FooterContainer = styled.footer`
   padding: 0.5rem 0 0.7rem 0;
   background: ${({ theme }) => theme.colors.white};

@@ -178,10 +178,7 @@ export const ReportSummarySection: React.FC<Props> = ({
       }
     : data.keyPoints;
 
-  // Ensure we show loading if AI is enabled and loading, or if AI is enabled but we don't have AI data yet
-  const showLoading = (isAiEnabled && aiLoading) || (isAiEnabled && !useAiSummary);
-
-  if (showLoading) {
+  if (isAiEnabled && aiLoading) {
     return (
       <ReportSection 
         id="summary" 
@@ -212,12 +209,6 @@ export const ReportSummarySection: React.FC<Props> = ({
       </ReportSection>
     );
   }
-
-  /* 
-    Fallback loading check removed as it's now covered by showLoading logic above.
-    The original mock data fallback is implicitly handled because if !showLoading, we render the main content.
-    If !useAiSummary, we use `data` (mock data).
-  */
 
   return (
     <ReportSection 

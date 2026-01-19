@@ -34,16 +34,11 @@ const Sidebar = styled.div`
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
     width: 100%;
-    position: fixed;
-    top: 56px; /* Exact header height match */
-    left: 0;
-    right: 0;
-    z-index: 900;
+    position: sticky;
+    top: 4rem;
+    z-index: 100;
     background: ${({ theme }) => theme.colors.background};
-    padding: 0;
-    margin-top: 0;
-    height: auto;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 0.5rem 0;
   }
 `;
 
@@ -64,11 +59,8 @@ const SidebarContent = styled.div`
   }
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    padding: 0;
-    margin-bottom: 0;
-    background: #fff0f0; /* Light pink background to match style */
-    box-shadow: none;
-    border-radius: 0;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
     
     h3 {
       margin-bottom: 0;
@@ -77,9 +69,13 @@ const SidebarContent = styled.div`
   }
 `;
 
-const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
+const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    display: ${({ $isExpanded }) => ($isExpanded ? 'block' : 'none')};
+    display: ${({ $isExpanded }) => $isExpanded ? 'grid' : 'none'};
     position: absolute;
     top: 100%;
     left: 0;
@@ -89,23 +85,9 @@ const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     z-index: 100;
     border-radius: 0 0 12px 12px;
-    margin-top: 0;
-    border-top: 1px solid rgba(0,0,0,0.05);
-  }
-`;
-
-const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-  justify-items: center;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    grid-template-columns: repeat(8, 1fr);
-    gap: 0.25rem;
-    max-height: 150px;
+    max-height: 300px;
     overflow-y: auto;
-    width: 100%;
+    grid-template-columns: repeat(5, 1fr);
   }
 `;
 
@@ -118,17 +100,6 @@ const MobileProgressHeader = styled.div`
     justify-content: space-between;
     width: 100%;
     position: relative;
-    padding: 0.8rem 1rem;
-    background: transparent;
-    cursor: pointer;
-    z-index: 101;
-    
-    h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: ${({ theme }) => theme.colors.textLight};
-      margin: 0;
-    }
   }
 `;
 
@@ -177,9 +148,8 @@ const QuestionNumber = styled.button<{ $status: 'answered' | 'error' | 'normal' 
   }}
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
   }
 `;
@@ -188,18 +158,10 @@ const MainContent = styled.div`
   flex: 1;
   min-width: 0;
   margin-top: 0.4rem;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    margin-top: 45px; /* Compensate for fixed sidebar height */
-  }
 `;
 
 const PageTitle = styled.h2`
   margin: 0.7rem 0 1.3rem;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    margin-top: 0.5rem;
-  }
 `;
 
 const AlertBar = styled(motion.div)`
@@ -480,29 +442,27 @@ export const MBTIPage: React.FC = () => {
               }
             `}</style>
 
-            <ExpandedContent $isExpanded={isExpanded}>
-              <QuestionGrid>
-                {mbtiQuestions.map((q, idx) => {
-                  const isAnswered = !!answers[q.id];
-                  const isError = triedSubmit && !isAnswered;
-                  const isCurrent = currentQuestionId === q.id;
-                  const status = isAnswered ? 'answered' : isError ? 'error' : isCurrent ? 'active' : 'normal';
-                  return (
-                    <QuestionNumber
-                      key={q.id}
-                      $status={status}
-                      onClick={() => {
-                        scrollToQuestion(q.id);
-                        setIsExpanded(false);
-                      }}
-                    >
-                      {idx + 1}
-                    </QuestionNumber>
-                  );
-                })}
-              </QuestionGrid>
-              <TestButton onClick={fillAllAnswers}>测试专用：一键填写</TestButton>
-            </ExpandedContent>
+            <QuestionGrid $isExpanded={isExpanded}>
+              {mbtiQuestions.map((q, idx) => {
+                const isAnswered = !!answers[q.id];
+                const isError = triedSubmit && !isAnswered;
+                const isCurrent = currentQuestionId === q.id;
+                const status = isAnswered ? 'answered' : isError ? 'error' : isCurrent ? 'active' : 'normal';
+                return (
+                  <QuestionNumber
+                    key={q.id}
+                    $status={status}
+                    onClick={() => {
+                      scrollToQuestion(q.id);
+                      setIsExpanded(false);
+                    }}
+                  >
+                    {idx + 1}
+                  </QuestionNumber>
+                );
+              })}
+            </QuestionGrid>
+            <TestButton onClick={fillAllAnswers}>测试专用：一键填写</TestButton>
           </SidebarContent>
         </Sidebar>
 

@@ -7,13 +7,13 @@ const PanelContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
   overflow: hidden;
   border: 1px solid #e2e8f0;
 `;
 
 const Header = styled.div`
-  padding: 0.5rem 1rem;
+  padding: 1rem 1.5rem;
   background: #f8fafc;
   display: flex;
   justify-content: space-between;
@@ -25,13 +25,13 @@ const Header = styled.div`
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: #2d3748;
   }
 `;
 
 const Content = styled.div<{ $isOpen: boolean }>`
-  padding: ${({ $isOpen }) => ($isOpen ? '0.75rem 1rem' : '0 1rem')};
+  padding: ${({ $isOpen }) => ($isOpen ? '1.5rem' : '0 1.5rem')};
   height: ${({ $isOpen }) => ($isOpen ? 'auto' : '0')};
   opacity: ${({ $isOpen }) => ($isOpen ? '1' : '0')};
   transition: all 0.3s ease;
@@ -39,7 +39,7 @@ const Content = styled.div<{ $isOpen: boolean }>`
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 0.25rem;
+  margin-bottom: 1rem;
 `;
 
 const SwitchLabel = styled.label`

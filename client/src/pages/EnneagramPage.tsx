@@ -99,7 +99,7 @@ const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
 
 const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.5rem;
   justify-items: center;
   
@@ -178,6 +178,7 @@ const QuestionNumber = styled.button<{ $status: 'answered' | 'active' | 'normal'
     height: auto;
     aspect-ratio: 1;
     flex-shrink: 0;
+    font-size: 0.75rem;
   }
 `;
 

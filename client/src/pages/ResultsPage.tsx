@@ -7,7 +7,8 @@ import { mockAnalysisData } from '../data/mockAnalysisData';
 import { AnalysisResult } from '../types/report';
 import { useLanguage } from '../context/LanguageContext';
 import { AIReportData, fetchDeepSeekAnalysis } from '../utils/ai';
-import { mbtiDescriptionsEn, mbtiDescriptionsZh } from '../data/mbti';
+import { mockAiReportZh, mockAiReportEn } from '../data/mockAiReport';
+import { mbtiDescriptionsZh } from '../data/mbti';
 import { enneagramDescriptionsZh, enneagramDescriptionsEn } from '../data/enneagram';
 
 import { ReportLayout } from '../components/report/ReportLayout';
@@ -19,8 +20,21 @@ import { CareerPathSection } from '../components/report/CareerPathSection';
 import { RelationshipsSection } from '../components/report/RelationshipsSection';
 import { ReportSummarySection } from '../components/report/ReportSummarySection';
 import { ShareModal } from '../components/report/ShareModal';
-import { ChatGPTPromptSection } from '../components/report/ChatGPTPromptSection';
 import { FaDownload, FaShareAlt, FaRedo } from 'react-icons/fa';
+
+const GlobalLoadingBar = styled.div`
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border: 1px solid rgba(0,0,0,0.06);
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+`;
 
 const Header = styled.header`
   text-align: center;
@@ -50,12 +64,6 @@ const FooterActions = styled.div`
   @media print {
     display: none;
   }
-
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.5rem 1rem;
-  }
 `;
 
 const ActionButton = styled.button<{ $primary?: boolean }>`
@@ -77,12 +85,6 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadows.hover};
-  }
-
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    width: 100%;
-    justify-content: center;
-    padding: 1rem;
   }
 `;
 
@@ -127,8 +129,7 @@ const replaceTypePlaceholders = (text: string, mbti: string, mainType: number, s
 const buildDynamicReportData = (
   base: AnalysisResult,
   mbti: string | null,
-  enneagram: any,
-  language: string
+  enneagram: any
 ): AnalysisResult => {
   if (!mbti || !enneagram) return base;
 
@@ -137,61 +138,20 @@ const buildDynamicReportData = (
 
   if (!mainType || !subtype) return base;
 
-  const mbtiInfoZh = mbtiDescriptionsZh[mbti] || null;
-  const mbtiInfoEn = mbtiDescriptionsEn[mbti] || null;
-  const mainInfoZh = enneagramDescriptionsZh[mainType] || null;
-  const wingInfoZh = enneagramDescriptionsZh[subtype] || null;
-  const mainInfoEn = enneagramDescriptionsEn[mainType] || null;
+  const mbtiInfo = mbtiDescriptionsZh[mbti] || null;
+  const mainInfo = enneagramDescriptionsZh[mainType] || null;
+  const wingInfo = enneagramDescriptionsZh[subtype] || null;
 
-  const characterTypeCn = `${mbtiInfoZh ? mbtiInfoZh.title : mbti} × ${
-    mainInfoZh ? mainInfoZh.title : `${mainType}号`
-  }`;
+  const characterTypeCn = `${mbtiInfo ? mbtiInfo.title : mbti} × ${mainInfo ? mainInfo.title : `${mainType}号`}`;
   const characterTypeEn = `${mbti}-${mainType}`;
 
-  const summaryMbti = `${mbti}：${
-    mbtiInfoZh ? mbtiInfoZh.description : '你的思维方式兼具独特的优势和挑战。'
-  }`;
+  const summaryMbti = `${mbti}：${mbtiInfo ? mbtiInfo.description : '你的思维方式兼具独特的优势和挑战。'}`;
   const summaryMain = `${mainType}号：${
-    mainInfoZh && mainInfoZh.trait
-      ? mainInfoZh.trait.zh
-      : mainInfoZh
-      ? mainInfoZh.title
-      : '你的核心动机塑造了你与世界的互动方式。'
+    mainInfo && mainInfo.trait ? mainInfo.trait.zh : mainInfo ? mainInfo.title : '你的核心动机塑造了你与世界的互动方式。'
   }`;
   const summaryWing = `${subtype}号：${
-    wingInfoZh && wingInfoZh.trait
-      ? wingInfoZh.trait.zh
-      : wingInfoZh
-      ? wingInfoZh.title
-      : '你的侧翼为性格增加了额外的倾向和风格。'
+    wingInfo && wingInfo.trait ? wingInfo.trait.zh : wingInfo ? wingInfo.title : '你的侧翼为性格增加了额外的倾向和风格。'
   }`;
-
-  // Build oneLiner and keywords
-  const useChinese = language === 'zh';
-
-  const mbtiDesc = useChinese
-    ? mbtiInfoZh?.description || ''
-    : mbtiInfoEn?.description || '';
-  const enneagramDesc = useChinese
-    ? mainInfoZh?.description || ''
-    : mainInfoEn?.description || '';
-  const oneLiner = `${mbtiDesc} ${enneagramDesc}`.trim();
-
-  const mbtiKeywords = useChinese
-    ? mbtiInfoZh
-      ? mbtiInfoZh.strengths.slice(0, 2)
-      : []
-    : mbtiInfoEn
-    ? mbtiInfoEn.strengths.slice(0, 2)
-    : [];
-  const enneagramKeywords = useChinese
-    ? mainInfoZh
-      ? mainInfoZh.strengths.slice(0, 1)
-      : []
-    : mainInfoEn
-    ? mainInfoEn.strengths.slice(0, 1)
-    : [];
-  const keywords = [...mbtiKeywords, ...enneagramKeywords];
 
   const updatedDetailAnalysis = {
     ...base.personalityTraits.detailAnalysis,
@@ -224,9 +184,7 @@ const buildDynamicReportData = (
         ...base.readingGuide.characterType,
         cn: characterTypeCn,
         en: characterTypeEn
-      },
-      oneLiner,
-      keywords
+      }
     },
     personalityTraits: {
       ...base.personalityTraits,
@@ -242,12 +200,10 @@ const buildDynamicReportData = (
   };
 };
 
-type SectionKey = 'traits' | 'growth' | 'career' | 'relationships' | 'summary';
-
 export const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { isAiEnabled, setIsAiEnabled, aiLoading, setAiLoading } = useAi();
+  const { isAiEnabled, aiLoading, setAiLoading } = useAi();
   const { t, language } = useLanguage();
   const [reportData, setReportData] = useState<AnalysisResult>(mockAnalysisData);
   const [aiReport, setAiReport] = useState<AIReportData | null>(null);
@@ -255,59 +211,14 @@ export const ResultsPage: React.FC = () => {
   const [reportId] = useState(() => Math.random().toString(36).substr(2, 9).toUpperCase());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Trigger AI fetch when enabled globally
-  useEffect(() => {
-    if (isAiEnabled) {
-      // Check if we already have data
-      const hasFullData = aiReport && 
-        aiReport.traits && 
-        aiReport.growth && 
-        aiReport.career && 
-        aiReport.relationships && 
-        aiReport.summary;
-
-      if (!hasFullData && !aiLoading) {
-        setAiLoading(true);
-        const mbtiResult = StorageManager.getItem<string>('mbti_result');
-        const enneagramResult = StorageManager.getItem<any>('enneagram_result');
-        
-        if (!mbtiResult || !enneagramResult) {
-          setAiLoading(false);
-          return;
-        }
-
-        const lang = language === 'zh' ? 'zh' : 'en';
-
-        fetchDeepSeekAnalysis(
-          mbtiResult,
-          String(enneagramResult.mainType),
-          String(enneagramResult.subtype),
-          lang
-        )
-          .then(data => {
-            if (data) {
-              setAiReport(prev => {
-                if (!prev) return data as AIReportData;
-                return {
-                  ...prev,
-                  ...data
-                };
-              });
-              setAiError(null);
-            } else {
-              setAiError(t('results.aiNoData'));
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            setAiError(t('results.aiError'));
-          })
-          .finally(() => {
-            setAiLoading(false);
-          });
-      }
-    }
-  }, [isAiEnabled, language, t, aiReport, aiLoading]);
+  // Track which sections have AI enabled
+  const [sectionAiEnabled, setSectionAiEnabled] = useState({
+    traits: false,
+    growth: false,
+    career: false,
+    relationships: false,
+    summary: false
+  });
 
   const mbtiLetterCounts = StorageManager.getItem<Record<string, number>>('mbti_letter_counts') || {};
 
@@ -350,6 +261,77 @@ export const ResultsPage: React.FC = () => {
     }
   ];
 
+  // Toggle AI for a specific section
+  const toggleSectionAi = (section: keyof typeof sectionAiEnabled) => {
+    setSectionAiEnabled(prev => {
+      const newState = { ...prev, [section]: !prev[section] };
+      if (newState[section] && !aiLoading) {
+        const moduleMap: Record<string, string> = {
+          traits: 'traits',
+          growth: 'growth',
+          career: 'career',
+          relationships: 'relationships',
+          summary: 'summary'
+        };
+        
+        const hasData = aiReport && (aiReport as any)[moduleMap[section]] && 
+                        (Array.isArray((aiReport as any)[moduleMap[section]]) 
+                          ? (aiReport as any)[moduleMap[section]].length > 0 
+                          : Object.keys((aiReport as any)[moduleMap[section]]).length > 0);
+
+        if (!hasData) {
+           triggerAiFetch([moduleMap[section]]);
+        }
+      }
+      return newState;
+    });
+  };
+
+  const triggerAiFetch = (modules: string[] = []) => {
+    const mbtiResult = StorageManager.getItem<string>('mbti_result');
+    const enneagramResult = StorageManager.getItem<any>('enneagram_result');
+    
+    if (!mbtiResult || !enneagramResult) return;
+
+    setAiLoading(true);
+    const lang = language === 'zh' ? 'zh' : 'en';
+
+    const activeKey = StorageManager.getItem<string>('deepseek_api_key');
+    if (!activeKey) {
+      setAiError(t('results.apiKeyError'));
+      setAiLoading(false);
+      return;
+    }
+    fetchDeepSeekAnalysis(
+      mbtiResult,
+      String(enneagramResult.mainType),
+      String(enneagramResult.subtype),
+      lang,
+      modules.length > 0 ? modules : undefined
+    )
+    .then(data => {
+      if (data) {
+        setAiReport(prev => {
+          if (!prev) return data as AIReportData;
+          return {
+            ...prev,
+            ...data
+          };
+        });
+        setAiError(null);
+      } else {
+        setAiError(t('results.aiNoData'));
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      setAiError(t('results.aiError'));
+    })
+    .finally(() => {
+      setAiLoading(false);
+    });
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
 
@@ -361,13 +343,17 @@ export const ResultsPage: React.FC = () => {
     }
 
     const baseData = mockAnalysisData;
-    const dynamicData = buildDynamicReportData(baseData, mbtiResult, enneagramResult, language);
+    const dynamicData = buildDynamicReportData(baseData, mbtiResult, enneagramResult);
     setReportData(dynamicData);
     
     setAiReport(null);
     setAiError(null);
     setAiLoading(false);
-  }, [language, t]);
+    
+    if (isAiEnabled) {
+       // Optional: could auto-enable all sections if global is true
+    }
+  }, [isAiEnabled, language, t]);
 
   const handleRetest = () => {
     if (window.confirm(t('report.retestConfirm'))) {
@@ -438,35 +424,47 @@ export const ResultsPage: React.FC = () => {
       <PersonalityTraitsSection
         data={reportData.personalityTraits}
         aiReport={aiReport}
-        isAiEnabled={isAiEnabled}
+        isAiEnabled={sectionAiEnabled.traits}
         aiLoading={aiLoading}
+        onToggleAi={() => toggleSectionAi('traits')}
+        showAiToggle={true}
       />
       <PersonalGrowthSection 
         data={reportData.personalGrowth}
         aiReport={aiReport}
-        isAiEnabled={isAiEnabled}
+        isAiEnabled={sectionAiEnabled.growth}
         aiLoading={aiLoading}
+        onToggleAi={() => toggleSectionAi('growth')}
+        showAiToggle={true}
       />
       <CareerPathSection 
         data={reportData.careerPath}
         aiReport={aiReport}
-        isAiEnabled={isAiEnabled}
+        isAiEnabled={sectionAiEnabled.career}
         aiLoading={aiLoading}
+        onToggleAi={() => toggleSectionAi('career')}
+        showAiToggle={true}
       />
       <RelationshipsSection 
         data={reportData.relationships}
         aiReport={aiReport}
-        isAiEnabled={isAiEnabled}
+        isAiEnabled={sectionAiEnabled.relationships}
         aiLoading={aiLoading}
+        onToggleAi={() => toggleSectionAi('relationships')}
+        showAiToggle={true}
       />
       <ReportSummarySection 
         data={reportData.reportSummary}
         aiReport={aiReport}
-        isAiEnabled={isAiEnabled}
+        isAiEnabled={sectionAiEnabled.summary}
         aiLoading={aiLoading}
+        onToggleAi={() => toggleSectionAi('summary')}
+        showAiToggle={true}
       />
 
-      <ChatGPTPromptSection prompt={reportData.chatgptPrompt} />
+      {isAiEnabled && aiLoading && (
+        <GlobalLoadingBar />
+      )}
 
       {isAiEnabled && !aiReport && !aiLoading && aiError && (
         <div

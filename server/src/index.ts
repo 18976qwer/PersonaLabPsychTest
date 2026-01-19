@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { generateDeepSeekReport } from './services/deepseek';
+import axios from 'axios';
 
 dotenv.config();
 
@@ -27,31 +27,29 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// AI Report Generation
+// Mock AI Report Generation
 app.post('/api/generate-report', async (req, res) => {
-  try {
-    const { mbti, mainType, subtype, lang, modules } = req.body;
+  const { mbti, enneagram } = req.body;
 
-    if (!mbti || !mainType || !subtype) {
-      return res.status(400).json({ error: 'Missing personality data (mbti, mainType, subtype are required)' });
-    }
-
-    const report = await generateDeepSeekReport(
-      mbti,
-      String(mainType),
-      String(subtype),
-      lang || 'zh',
-      modules
-    );
-
-    res.json(report);
-  } catch (error: any) {
-    console.error('Generation Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate report', 
-      details: error.message 
-    });
+  if (!mbti || !enneagram) {
+    return res.status(400).json({ error: 'Missing personality data' });
   }
+
+  // TODO: Integrate with DeepSeek API
+  // const response = await axios.post('https://api.deepseek.com/v1/chat/completions', { ... });
+
+  // Mock response for now
+  setTimeout(() => {
+    res.json({
+      success: true,
+      report: `
+        <h1>Personalized Analysis</h1>
+        <p>Your MBTI type is <strong>${mbti}</strong> and your Enneagram type is <strong>${enneagram.mainType}w${enneagram.subtype}</strong>.</p>
+        <p>This unique combination suggests...</p>
+        <p><em>(This is a mock AI generated report)</em></p>
+      `
+    });
+  }, 1000);
 });
 
 app.listen(PORT, () => {

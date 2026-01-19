@@ -250,10 +250,7 @@ export const RelationshipsSection: React.FC<Props> = ({
         }
       : data.intimacy.growth;
 
-  // Ensure we show loading if AI is enabled and loading, or if AI is enabled but we don't have AI data yet
-  const showLoading = (isAiEnabled && aiLoading) || (isAiEnabled && !useAiRelationships);
-
-  if (showLoading) {
+  if (isAiEnabled && aiLoading) {
     return (
       <ReportSection 
         id="relationships" 
@@ -285,21 +282,7 @@ export const RelationshipsSection: React.FC<Props> = ({
           </CommTable>
         </TableWrapper>
 
-        {/* Mobile Loading View for Communication */}
-        <MobileCardContainer>
-           {[1, 2, 3].map(i => (
-             <MobileCard key={i}>
-               <SkeletonBlock width="40%" style={{marginBottom: '0.5rem'}} />
-               <SkeletonBlock width="90%" style={{marginBottom: '1rem'}} />
-               <SkeletonBlock width="40%" style={{marginBottom: '0.5rem'}} />
-               <SkeletonBlock width="90%" style={{marginBottom: '1rem'}} />
-               <SkeletonBlock width="40%" style={{marginBottom: '0.5rem'}} />
-               <SkeletonBlock width="90%" />
-             </MobileCard>
-           ))}
-        </MobileCardContainer>
-
-        <SubHeader style={{ marginTop: '2rem' }}><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
+        <SubHeader><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
         <IntimacyGrid>
           <ContentBox>
             <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -323,7 +306,7 @@ export const RelationshipsSection: React.FC<Props> = ({
           </ContentBox>
         </IntimacyGrid>
 
-        <SubHeader style={{ marginTop: '2rem' }}><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
+        <SubHeader><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
         <GrowthContainer>
           {[1, 2, 3].map(i => (
             <GrowthCard key={i}>
@@ -406,7 +389,7 @@ export const RelationshipsSection: React.FC<Props> = ({
         )}
       </MobileCardContainer>
 
-      <SubHeader style={{ marginTop: '2rem' }}><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
+      <SubHeader><FaHeart /> {t('report.relationshipsSection.intimacy.title')}</SubHeader>
       <IntimacyGrid>
         <ContentBox>
           <h4 style={{ color: theme.colors.success, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -430,7 +413,7 @@ export const RelationshipsSection: React.FC<Props> = ({
         </ContentBox>
       </IntimacyGrid>
 
-      <SubHeader style={{ marginTop: '2rem' }}><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
+      <SubHeader><FaHeart /> {t('report.relationshipsSection.growth.title')}</SubHeader>
       <GrowthContainer>
         {[
           { title: t('report.relationshipsSection.growth.awarenessTitle'), data: growthData.awareness, number: 1 },

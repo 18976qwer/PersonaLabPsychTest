@@ -85,20 +85,15 @@ export const mockAiReportZh: AIReportData = {
       strengths: ['待生成...'],
       challenges: ['待生成...'],
       growth: {
-        consciousness: [{ title: '待生成...', desc: '待生成...' }],
-        skill: [{ title: '待生成...', desc: '待生成...' }],
-        pattern: [{ title: '待生成...', desc: '待生成...' }]
+        consciousness: '待生成...',
+        skill: ['待生成...'],
+        pattern: '待生成...'
       }
     }
   },
   summary: {
-    title: '待生成...',
     summary: '待生成...',
-    highlights: {
-      thinking: '待生成...',
-      behavior: '待生成...',
-      growth: '待生成...'
-    }
+    highlights: ['待生成...']
   }
 };
 
@@ -187,19 +182,14 @@ export const mockAiReportEn: AIReportData = {
       strengths: ['Pending...'],
       challenges: ['Pending...'],
       growth: {
-        consciousness: [{ title: 'Pending...', desc: 'Pending...' }],
-        skill: [{ title: 'Pending...', desc: 'Pending...' }],
-        pattern: [{ title: 'Pending...', desc: 'Pending...' }]
+        consciousness: 'Pending...',
+        skill: ['Pending...'],
+        pattern: 'Pending...'
       }
     }
   },
   summary: {
-    title: 'Pending...',
     summary: 'Pending...',
-    highlights: {
-      thinking: 'Pending...',
-      behavior: 'Pending...',
-      growth: 'Pending...'
-    }
+    highlights: ['Pending...']
   }
 };

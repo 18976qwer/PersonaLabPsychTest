@@ -33,23 +33,13 @@ interface Props {
   children: ReactNode;
 }
 
-const MobileNavSpacer = styled.div`
-  display: none;
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    display: block;
-    height: 50px; /* Adjust based on ReportNavigation height */
-    margin-bottom: 1rem;
-  }
-`;
-
 export const ReportLayout: React.FC<Props> = ({ children }) => {
   return (
     <PageContainer>
       <ScrollProgress />
       <ContentWrapper>
-        <ReportNavigation />
-        <MobileNavSpacer />
         <AiSettingsPanel />
+        <ReportNavigation />
         <MainContent>
           {children}
         </MainContent>

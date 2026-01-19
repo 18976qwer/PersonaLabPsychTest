@@ -11,7 +11,7 @@ import { ProcessList, ProcessItem, ProcessContent } from '../common/ResponsiveSt
 const SectionHeader = styled.h3`
   font-size: 1.4rem;
   color: ${({ theme }) => theme.colors.text};
-  margin: 0 0 1.5rem 0;
+  margin: 3rem 0 1.5rem 0;
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -454,7 +454,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
         </ListCard>
       </ListGrid>
 
-      <SectionHeader style={{ marginTop: '2rem' }}>{t('report.traitsSection.timelineTitle')}</SectionHeader>
+      <SectionHeader>{t('report.traitsSection.timelineTitle')}</SectionHeader>
       <TimelineBox>
         <TimeCard whileHover={{ y: -5 }}>
           <h3><FaHourglassHalf /> {t('report.traitsSection.pastTitle')}</h3>
