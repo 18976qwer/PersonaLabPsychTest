@@ -6,6 +6,7 @@ import { AnalysisResult } from '../../types/report';
 import { useLanguage } from '../../context/LanguageContext';
 import { AIReportData } from '../../utils/ai';
 import { motion } from 'framer-motion';
+import { jaccardSimilarity, normalizeText } from '../../utils/textSimilarity';
 
 const shimmer = keyframes`
   0% { background-position: -200% 0; }
@@ -22,6 +23,15 @@ const SkeletonBlock = styled.div<{ width?: string; height?: string }>`
   margin-bottom: 0.5rem;
 `;
 
+const SkeletonInline = styled.span<{ width?: string; height?: string }>`
+  display: inline-block;
+  width: ${({ width }) => width || '100%'};
+  height: ${({ height }) => height || '1rem'};
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: ${shimmer} 1.5s infinite;
+  border-radius: 4px;
+`;
 const SummaryBox = styled(motion.div)`
   background: linear-gradient(
     135deg,
@@ -97,6 +107,11 @@ const PointCard = styled(motion.div)`
   transition: ${({ theme }) => theme.transitions.default};
   height: 100%;
   
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  
   &:hover {
     transform: translateY(-5px);
     box-shadow: ${({ theme }) => theme.shadows.hover};
@@ -115,6 +130,10 @@ const IconCircle = styled.div<{ $color: string }>`
   font-size: 1.5rem;
   flex-shrink: 0;
   margin-bottom: 0.5rem;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    margin-bottom: 0;
+  }
 `;
 
 const CardContent = styled.div`
@@ -127,6 +146,13 @@ const CardContent = styled.div`
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
+
+    @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+      font-size: 1.3rem;
+      font-weight: 700;
+      white-space: nowrap;
+      margin-bottom: 0.4rem;
+    }
   }
   
   p {
@@ -156,7 +182,7 @@ export const ReportSummarySection: React.FC<Props> = ({
   onToggleAi,
   showAiToggle = false
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const useAiSummary = Boolean(isAiEnabled && aiReport && (aiReport as any).summary);
 
@@ -178,7 +204,37 @@ export const ReportSummarySection: React.FC<Props> = ({
       }
     : data.keyPoints;
 
-  if (isAiEnabled && aiLoading) {
+  const hasChinese = (s?: string) => !!s && /[\u4e00-\u9fff]/.test(s);
+  const sanitizedTitle = language === 'en' && hasChinese(summaryTitle) ? data.title : summaryTitle;
+  const sanitizedText = language === 'en' && hasChinese(summaryText) ? data.text : summaryText;
+  const sanitizedKeyPoints = {
+    thinking: language === 'en' && hasChinese(keyPoints.thinking) ? data.keyPoints.thinking : keyPoints.thinking,
+    behavior: language === 'en' && hasChinese(keyPoints.behavior) ? data.keyPoints.behavior : keyPoints.behavior,
+    growth: language === 'en' && hasChinese(keyPoints.growth) ? data.keyPoints.growth : keyPoints.growth
+  };
+
+  const dedupeAgainstSummary = (kp: { thinking: string; behavior: string; growth: string }) => {
+    const base = normalizeText(sanitizedText);
+    const out = { ...kp };
+    const keys: Array<keyof typeof kp> = ['thinking','behavior','growth'];
+    for (const k of keys) {
+      const v = normalizeText(out[k]);
+      if (v && base && jaccardSimilarity(v, base) >= 0.8) {
+        out[k] = (k === 'thinking' ? data.keyPoints.thinking : k === 'behavior' ? data.keyPoints.behavior : data.keyPoints.growth);
+      }
+    }
+    // cross-key dedupe
+    const t = normalizeText(out.thinking);
+    const b = normalizeText(out.behavior);
+    const g = normalizeText(out.growth);
+    if (t && b && jaccardSimilarity(t,b) >= 0.8) out.behavior = data.keyPoints.behavior;
+    if (t && g && jaccardSimilarity(t,g) >= 0.8) out.growth = data.keyPoints.growth;
+    if (b && g && jaccardSimilarity(b,g) >= 0.8) out.growth = data.keyPoints.growth;
+    return out;
+  };
+  const finalKeyPoints = dedupeAgainstSummary(sanitizedKeyPoints);
+
+  if ((isAiEnabled && !useAiSummary) || aiLoading) {
     return (
       <ReportSection 
         id="summary" 
@@ -204,8 +260,8 @@ export const ReportSummarySection: React.FC<Props> = ({
             <PointCard key={i}>
               <IconCircle $color="#cbd5e0"><SkeletonBlock width="32px" height="32px" style={{borderRadius: '50%', margin: 0}} /></IconCircle>
               <CardContent>
-                <h4><SkeletonBlock width="40%" height="1rem" style={{margin: '0 auto 0.8rem'}} /></h4>
-                <p><SkeletonBlock width="80%" height="1rem" style={{margin: '0 auto'}} /></p>
+                <h4><SkeletonInline width="40%" height="1rem" /></h4>
+                <p><SkeletonInline width="80%" height="1rem" /></p>
               </CardContent>
             </PointCard>
           ))}
@@ -251,10 +307,10 @@ export const ReportSummarySection: React.FC<Props> = ({
       >
         <SummaryHeader>
           <AccentBar />
-          <SummaryTitle>{summaryTitle || t('report.summary')}</SummaryTitle>
+          <SummaryTitle>{sanitizedTitle || t('report.summary')}</SummaryTitle>
         </SummaryHeader>
         <SummaryText>
-          {summaryText}
+          {sanitizedText}
         </SummaryText>
       </SummaryBox>
       
@@ -268,7 +324,7 @@ export const ReportSummarySection: React.FC<Props> = ({
           <IconCircle $color="#FF7F7F"><FaLightbulb /></IconCircle>
           <CardContent>
             <h4>{t('report.thinkingPattern')}</h4>
-            <p>{keyPoints.thinking}</p>
+            <p>{finalKeyPoints.thinking}</p>
           </CardContent>
         </PointCard>
         <PointCard
@@ -280,7 +336,7 @@ export const ReportSummarySection: React.FC<Props> = ({
           <IconCircle $color="#98D8C8"><FaRunning /></IconCircle>
           <CardContent>
             <h4>{t('report.behaviorTraits')}</h4>
-            <p>{keyPoints.behavior}</p>
+            <p>{finalKeyPoints.behavior}</p>
           </CardContent>
         </PointCard>
         <PointCard
@@ -292,7 +348,7 @@ export const ReportSummarySection: React.FC<Props> = ({
           <IconCircle $color="#D4AF37"><FaTree /></IconCircle>
           <CardContent>
             <h4>{t('report.growthKeys')}</h4>
-            <p>{keyPoints.growth}</p>
+            <p>{finalKeyPoints.growth}</p>
           </CardContent>
         </PointCard>
       </KeyPointsGrid>

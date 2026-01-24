@@ -155,6 +155,7 @@ export const Header: React.FC = () => {
 
   const isHome = location.pathname === '/';
   const isTestPage = location.pathname.includes('/mbti') || location.pathname.includes('/enneagram');
+  const isResultsPage = location.pathname.includes('/results') || location.pathname.includes('/ai-analysis');
   
   const handleLogoClick = () => {
     if (isHome) {
@@ -162,7 +163,7 @@ export const Header: React.FC = () => {
       return;
     }
 
-    if (isTestPage) {
+    if (isTestPage || isResultsPage) {
       setShowModal(true);
     } else {
       setShowProgress(false);
@@ -237,7 +238,7 @@ export const Header: React.FC = () => {
         onClose={() => setShowModal(false)}
         onConfirm={confirmReturnHome}
         title={t('modal.returnHomeTitle')}
-        message={t('modal.returnHomeMessage')}
+        message={isResultsPage ? t('modal.returnHomeMessageResults') : t('modal.returnHomeMessage')}
       />
     </>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { mbtiQuestionsEn, mbtiQuestionsZh } from '../data/mbti';
+import { likertQuestions, likertLabels } from '../data/mbtiLikert';
 import { StorageManager } from '../utils/storage';
 import { useTestProgress } from '../context/TestProgressContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -85,7 +85,7 @@ const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
     left: 0;
     right: 0;
     background: white;
-    padding: 1rem;
+    padding: 0.5rem;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     z-index: 100;
     border-radius: 0 0 12px 12px;
@@ -96,15 +96,15 @@ const ExpandedContent = styled.div<{ $isExpanded?: boolean }>`
 
 const QuestionGrid = styled.div<{ $isExpanded?: boolean }>`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 0.5rem;
   justify-items: center;
   
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    grid-template-columns: repeat(8, 1fr);
-    gap: 0.25rem;
-    max-height: 150px;
-    overflow-y: auto;
+    grid-template-columns: repeat(14, 1fr);
+    gap: 0.2rem;
+    max-height: none;
+    overflow: visible;
     width: 100%;
   }
 `;
@@ -181,6 +181,8 @@ const QuestionNumber = styled.button<{ $status: 'answered' | 'error' | 'normal' 
     height: auto;
     aspect-ratio: 1;
     flex-shrink: 0;
+    font-size: 0.6rem;
+    padding: 0;
   }
 `;
 
@@ -248,44 +250,74 @@ const OptionsContainer = styled.div`
   gap: 0.8rem;
 `;
 
-const OptionButton = styled.button<{ $selected: boolean }>`
-  padding: 0.85rem;
-  text-align: left;
-  background: ${({ theme, $selected }) => $selected ? theme.colors.primary : theme.colors.background};
-  color: ${({ theme, $selected }) => $selected ? theme.colors.white : theme.colors.text};
-  border: 2px solid ${({ theme, $selected }) => $selected ? theme.colors.primary : 'transparent'};
-  border-radius: 8px;
-  transition: all 0.2s;
-  font-size: 1rem;
-
-  &:hover {
-    background: ${({ theme, $selected }) => $selected ? theme.colors.primary : '#e9ecef'};
+const OptionsScale = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  align-items: stretch;
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    grid-template-columns: repeat(7, 1fr);
   }
 `;
 
-const SubmitButton = styled.button`
-  width: 100%;
-  padding: 1rem;
+const ScaleOption = styled.label<{ $selected: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 0.6rem 2px;
+  color: ${({ theme, $selected }) => $selected ? theme.colors.secondary : theme.colors.text};
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  text-align: center;
+  line-height: 1.2;
+  user-select: none;
+  
+  &:hover {
+    color: ${({ theme }) => theme.colors.secondary};
+  }
+  
+  &::before {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid ${({ $selected, theme }) => $selected ? theme.colors.secondary : '#cbd5e0'};
+    background-color: transparent;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    
+    ${({ $selected, theme }) => $selected && `
+      background-color: transparent;
+      box-shadow: inset 0 0 0 4px ${theme.colors.secondary};
+    `}
+  }
+  
+  input {
+    display: none;
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin: 1.2rem 0 0.6rem 0;
+`;
+
+const NavButton = styled.button`
+  padding: 0.75rem 2rem;
   background: ${({ theme }) => theme.colors.primary};
   color: ${({ theme }) => theme.colors.white};
   border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
+  border-radius: 6px;
   font-weight: 600;
-  margin: 1.2rem 0 0.5rem 0;
-  cursor: pointer;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.secondary};
-    transform: translateY(-2px);
-  }
   
   &:disabled {
     background: ${({ theme }) => theme.colors.textLight};
     cursor: not-allowed;
-    transform: none;
   }
 `;
 
@@ -311,19 +343,37 @@ export const MBTIPage: React.FC = () => {
   const { setProgress, setTotal, setShowProgress } = useTestProgress();
   const { language, t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [answers, setAnswers] = useState<Record<number, string>>(() => {
-    return StorageManager.getItem<Record<number, string>>('mbti_answers') || {};
-  });
+  const [answers, setAnswers] = useState<Record<number, number>>({});
   const [triedSubmit, setTriedSubmit] = useState(false);
   const questionRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const [currentQuestionId, setCurrentQuestionId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pendingScrollTo, setPendingScrollTo] = useState<number | null>(null);
 
-  const mbtiQuestions = language === 'zh' ? mbtiQuestionsZh : mbtiQuestionsEn;
+  const mbtiQuestions = likertQuestions.map(q => ({
+    id: q.id,
+    text: language === 'zh' ? q.textZh : q.textEn,
+    dimension: q.dimension,
+    side: q.side
+  }));
+  const totalPages = 6;
+  const perPage = 7;
+  const pagedQuestions = Array.from({ length: totalPages }, (_, i) =>
+    mbtiQuestions.slice(i * perPage, i * perPage + perPage)
+  );
 
   useEffect(() => {
     setTotal(mbtiQuestions.length);
     setShowProgress(true);
   }, [setTotal, setShowProgress, mbtiQuestions.length, mbtiQuestions]);
+
+  useEffect(() => {
+    // Restore progress from storage if available
+    const savedAnswers = StorageManager.getItem<Record<number, number>>('mbti_likert_answers');
+    if (savedAnswers) {
+      setAnswers(savedAnswers);
+    }
+  }, []);
 
   useEffect(() => {
     const unanswered = mbtiQuestions.filter(q => !answers[q.id]);
@@ -337,11 +387,11 @@ export const MBTIPage: React.FC = () => {
   useEffect(() => {
     if (Object.keys(answers).length > 0) {
       setProgress(Object.keys(answers).length);
-      StorageManager.setItem('mbti_answers', answers);
+      StorageManager.setItem('mbti_likert_answers', answers);
     }
   }, [answers, setProgress]);
 
-  const handleOptionSelect = (questionId: number, value: string) => {
+  const handleOptionSelect = (questionId: number, value: number) => {
     setAnswers(prev => {
       const updated = { ...prev, [questionId]: value };
       const wasAnswered = !!prev[questionId];
@@ -364,17 +414,40 @@ export const MBTIPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
+  useEffect(() => {
+    if (pendingScrollTo !== null) {
+      const element = questionRefs.current[pendingScrollTo];
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        const absoluteY = window.scrollY + rect.top;
+        const offset = 80;
+        window.scrollTo({
+          top: absoluteY - offset,
+          behavior: 'smooth'
+        });
+        setCurrentQuestionId(pendingScrollTo);
+        setPendingScrollTo(null);
+      }
+    }
+  }, [currentPage, pendingScrollTo]);
+
   const scrollToQuestion = (id: number) => {
-    const element = questionRefs.current[id];
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      const absoluteY = window.scrollY + rect.top;
-      const offset = 80;
-      window.scrollTo({
-        top: absoluteY - offset,
-        behavior: 'smooth'
-      });
-      setCurrentQuestionId(id);
+    const targetPage = Math.ceil(id / perPage);
+    if (targetPage !== currentPage) {
+      setCurrentPage(targetPage);
+      setPendingScrollTo(id);
+    } else {
+      const element = questionRefs.current[id];
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        const absoluteY = window.scrollY + rect.top;
+        const offset = 80;
+        window.scrollTo({
+          top: absoluteY - offset,
+          behavior: 'smooth'
+        });
+        setCurrentQuestionId(id);
+      }
     }
   };
 
@@ -393,45 +466,58 @@ export const MBTIPage: React.FC = () => {
   };
 
   const calculateAndSaveResult = () => {
-    let e = 0, i = 0, s = 0, n = 0, t = 0, f = 0, j = 0, p = 0;
-
-    mbtiQuestionsEn.forEach(q => {
-      const answer = answers[q.id];
-      if (answer === 'E') e++;
-      if (answer === 'I') i++;
-      if (answer === 'S') s++;
-      if (answer === 'N') n++;
-      if (answer === 'T') t++;
-      if (answer === 'F') f++;
-      if (answer === 'J') j++;
-      if (answer === 'P') p++;
+    let E = 0, I = 0, S = 0, N = 0, T = 0, F = 0, J = 0, P = 0;
+    let A = 0, TT = 0;
+    mbtiQuestions.forEach(q => {
+      const raw = answers[q.id] || 0; // 1..7
+      const mapped = raw - 4; // -3..+3
+      if (mapped === 0) return;
+      if (q.dimension === 'EI') {
+        if (q.side === 'E') E += Math.max(0, mapped);
+        if (q.side === 'I') I += Math.max(0, mapped);
+      } else if (q.dimension === 'SN') {
+        if (q.side === 'S') S += Math.max(0, mapped);
+        if (q.side === 'N') N += Math.max(0, mapped);
+      } else if (q.dimension === 'TF') {
+        if (q.side === 'T') T += Math.max(0, mapped);
+        if (q.side === 'F') F += Math.max(0, mapped);
+      } else if (q.dimension === 'JP') {
+        if (q.side === 'J') J += Math.max(0, mapped);
+        if (q.side === 'P') P += Math.max(0, mapped);
+      } else if (q.dimension === 'ID') {
+        if (q.side === 'A') A += Math.max(0, mapped);
+        if (q.side === 'T') TT += Math.max(0, mapped);
+      }
     });
-
-    const type = [
-      e > i ? 'E' : 'I', // Tie goes to I (Right side)
-      s > n ? 'S' : 'N', // Tie goes to N (Right side)
-      t > f ? 'T' : 'F', // Tie goes to F (Right side)
-      j > p ? 'J' : 'P'  // Tie goes to P (Right side)
-    ].join('');
-
+    const choose = (left: number, right: number, leftLetter: string, rightLetter: string) => {
+      const total = left + right;
+      if (total === 0) return rightLetter;
+      const rightPct = right / total;
+      return rightPct > 0.5 ? rightLetter : rightPct < 0.5 ? leftLetter : rightLetter;
+    };
+    const L1 = choose(E, I, 'E', 'I');
+    const L2 = choose(S, N, 'S', 'N');
+    const L3 = choose(T, F, 'T', 'F');
+    const L4 = choose(J, P, 'J', 'P');
+    const type = `${L1}${L2}${L3}${L4}`;
+    const identity = (() => {
+      const total = A + TT;
+      if (total === 0) return 'A';
+      const aPct = A / total;
+      return aPct >= 0.55 ? 'A' : 'T';
+    })();
+    const fullType = `${type}-${identity}`;
     StorageManager.setItem('mbti_result', type);
-    StorageManager.setItem('mbti_letter_counts', {
-      E: e,
-      I: i,
-      S: s,
-      N: n,
-      T: t,
-      F: f,
-      J: j,
-      P: p
-    });
+    StorageManager.setItem('mbti_identity', identity);
+    StorageManager.setItem('mbti_type_full', fullType);
+    StorageManager.setItem('mbti_letter_counts', { E, I, S, N, T, F, J, P });
+    StorageManager.setItem('mbti_identity_counts', { A, T: TT });
   };
 
   const fillAllAnswers = () => {
-    const newAnswers: Record<number, string> = {};
+    const newAnswers: Record<number, number> = {};
     mbtiQuestions.forEach(q => {
-      const randomOption = q.options[Math.floor(Math.random() * q.options.length)];
-      newAnswers[q.id] = randomOption.value;
+      newAnswers[q.id] = Math.floor(Math.random() * 7) + 1;
     });
     setAnswers(newAnswers);
   };
@@ -502,6 +588,34 @@ export const MBTIPage: React.FC = () => {
                 })}
               </QuestionGrid>
               <TestButton onClick={fillAllAnswers}>测试专用：一键填写</TestButton>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <TestButton onClick={() => {
+                  const preset: Record<number, number> = {};
+                  mbtiQuestions.forEach(q => {
+                    let v = 4;
+                    if (q.dimension === 'EI') v = q.side === 'E' ? 7 : 1;
+                    else if (q.dimension === 'SN') v = q.side === 'N' ? 7 : 1;
+                    else if (q.dimension === 'TF') v = q.side === 'T' ? 7 : 1;
+                    else if (q.dimension === 'JP') v = q.side === 'J' ? 7 : 1;
+                    else if (q.dimension === 'ID') v = q.side === 'A' ? 7 : 1;
+                    preset[q.id] = v;
+                  });
+                  setAnswers(preset);
+                }}>极端：ENTJ-A</TestButton>
+                <TestButton onClick={() => {
+                  const preset: Record<number, number> = {};
+                  mbtiQuestions.forEach(q => {
+                    let v = 4;
+                    if (q.dimension === 'EI') v = q.side === 'I' ? 7 : 1;
+                    else if (q.dimension === 'SN') v = q.side === 'S' ? 7 : 1;
+                    else if (q.dimension === 'TF') v = q.side === 'F' ? 7 : 1;
+                    else if (q.dimension === 'JP') v = q.side === 'P' ? 7 : 1;
+                    else if (q.dimension === 'ID') v = q.side === 'T' ? 7 : 1;
+                    preset[q.id] = v;
+                  });
+                  setAnswers(preset);
+                }}>极端：ISFP-T</TestButton>
+              </div>
             </ExpandedContent>
           </SidebarContent>
         </Sidebar>
@@ -531,7 +645,7 @@ export const MBTIPage: React.FC = () => {
             )}
           </AnimatePresence>
 
-          {mbtiQuestions.map((q, idx) => (
+          {pagedQuestions[currentPage - 1].map((q, idx) => (
             <QuestionCard
               key={q.id}
               ref={(el: HTMLDivElement | null) => { questionRefs.current[q.id] = el; }}
@@ -541,25 +655,52 @@ export const MBTIPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
             >
-              <QuestionText>{idx + 1}. {(q as any).text}</QuestionText>
+              <QuestionText>{(currentPage - 1) * perPage + idx + 1}. {q.text}</QuestionText>
               
               <OptionsContainer>
-                {q.options.map((option, optIdx) => (
-                  <OptionButton
-                    key={optIdx}
-                    $selected={answers[q.id] === option.value}
-                    onClick={() => handleOptionSelect(q.id, option.value)}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
+                <OptionsScale>
+                  {(language === 'zh' ? likertLabels.zh : likertLabels.en).map((label, i) => {
+                    const val = i + 1;
+                    const selected = answers[q.id] === val;
+                    return (
+                      <ScaleOption key={val} $selected={selected} onClick={() => handleOptionSelect(q.id, val)}>
+                        <input type="radio" name={`q-${q.id}`} value={val} />
+                        {label}
+                      </ScaleOption>
+                    );
+                  })}
+                </OptionsScale>
               </OptionsContainer>
             </QuestionCard>
           ))}
 
-          <SubmitButton onClick={handleSubmit}>
-            {t('mbti.nextStep') || (language === 'zh' ? '下一步：九型人格' : 'Next Step: Enneagram')}
-          </SubmitButton>
+          <ButtonGroup>
+            <NavButton
+              style={{ background: 'rgb(255, 127, 127)' }}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              {t('common.prev')}
+            </NavButton>
+            <div style={{ alignSelf: 'center', color: '#718096' }}>
+              {language === 'zh' ? `第 ${currentPage} / ${totalPages} ${t('mbti.page')}` : `Page ${currentPage} / ${totalPages}`}
+            </div>
+            <NavButton
+              style={{ background: 'rgb(113, 128, 150)' }}
+              onClick={() => {
+                if (currentPage === totalPages) {
+                  handleSubmit();
+                } else {
+                  setCurrentPage(p => Math.min(totalPages, p + 1));
+                  window.scrollTo(0, 0);
+                }
+              }}
+            >
+              {currentPage === totalPages 
+                ? (t('mbti.nextStep') || (language === 'zh' ? '下一步：九型人格' : 'Next Step: Enneagram'))
+                : t('common.next')}
+            </NavButton>
+          </ButtonGroup>
         </MainContent>
       </PageLayout>
     </Container>

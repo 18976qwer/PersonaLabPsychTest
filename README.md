@@ -2,17 +2,138 @@
 
 全新重构版的 MBTI + 九型人格综合测评项目，前后端分离，支持中文 / 英文双语、AI 深度分析报告以及多模块可视化结果展示。
 
-## 项目结构
+## 项目文件结构
 
-- `client`：React + Vite + TypeScript 前端应用  
-  - 多语言支持（中文 / 英文）
-  - 报告页（阅读指引 / 人格特质 / 个人成长 / 职业路径 / 人际关系 / 报告总结）
-  - AI 深度分析开关（按 Section 独立控制，支持 Loading 状态保持）
-  - 移动端深度适配（九型人格 9 列布局、阅读指引章节跳转）
-- `server`：Express + TypeScript 后端服务  
-  - 对接 DeepSeek API 生成 AI 报告
-  - 通过环境变量管理 API Key
-  - CORS 安全配置与 API 代理支持
+```text
+D:\TRAE PROJECT\PSYCH-TEST-WEB-REFACTOR
+│  .gitignore
+│  README.md
+│
+├─client                    # 前端项目 (React + Vite)
+│  │  .env.development      # 本地开发配置
+│  │  index.html
+│  │  package.json
+│  │  vite.config.ts
+│  │
+│  └─src
+│      │  App.tsx
+│      │  main.tsx
+│      │
+│      ├─components
+│      │  │  AIReportView.tsx        # AI 报告视图入口
+│      │  │  AIConfigModal.tsx       # AI 配置弹窗
+│      │  │  ...
+│      │  │
+│      │  ├─common          # 通用组件
+│      │  │      ResponsiveStyles.tsx
+│      │  │      ScrollProgress.tsx
+│      │  │
+│      │  ├─report          # 报告页核心组件
+│      │  │      AiSettingsPanel.tsx      # AI 设置面板
+│      │  │      ReadingGuideSection.tsx  # 阅读指引 (含FAQ)
+│      │  │      ReportSummarySection.tsx # 报告总结 (含AI流式输出)
+│      │  │      DataVisualizationSection.tsx # 数据可视化
+│      │  │      PersonalityTraitsSection.tsx # 人格特质
+│      │  │      CareerPathSection.tsx    # 职业路径
+│      │  │      RelationshipsSection.tsx # 人际关系
+│      │  │      ...
+│      │  │
+│      │  └─...
+│      │
+│      ├─context            # 全局状态管理
+│      │      AiContext.tsx # AI 开关、Provider 状态、流式控制
+│      │      LanguageContext.tsx
+│      │
+│      ├─data               # 静态数据与多语言文案
+│      │      locales.ts    # 中英文案资源
+│      │      mbti.ts       # MBTI 题库
+│      │      enneagram.ts  # 九型人格题库
+│      │
+│      ├─pages              # 页面路由组件
+│      │      LandingPage.tsx
+│      │      MBTIPage.tsx
+│      │      EnneagramPage.tsx
+│      │      ResultsPage.tsx # 结果页主入口
+│      │
+│      ├─utils
+│      │      ai.ts         # 前端 AI 请求封装 (Fetch & SSE)
+│      │      textSimilarity.ts # 文本相似度计算与去重算法
+│      │      scoring.ts    # 评分逻辑
+│      │
+│      └─styles             # 全局样式与主题
+│
+└─server                    # 后端服务 (Express + TypeScript)
+    │  .env.example         # 环境变量示例
+    │  package.json
+    │
+    └─src
+        │  index.ts         # 服务入口 (API 路由、SSE 流式响应)
+        │
+        ├─services
+        │  │  promptTemplates.ts # 统一 Prompt 模板管理
+        │  │  lexicon.ts         # 敏感词过滤与锚点数据
+        │  │
+        │  └─providers      # 多模型接入层
+        │          qwen.ts      # 通义千问实现
+        │          minimax.ts   # MiniMax 实现 (支持个人开发者)
+        │          moonshot.ts  # Moonshot (Kimi) 实现
+        │          deepseek.ts  # DeepSeek 实现 (兜底策略)
+        │          utils.ts     # 厂商通用工具函数
+```
+
+## 多 AI 模型集成
+
+本项目后端集成了多家主流大模型厂商，提供灵活的切换与高可用兜底机制。
+
+### 1. 支持的模型厂商
+- **通义千问 (Qwen)**：默认推荐，响应速度快，综合能力强。
+- **MiniMax**：极速模式，适合高并发场景。
+  - *注：支持个人开发者账号（无需配置 Group ID）。*
+- **Moonshot (Kimi)**：擅长长文本处理。
+- **DeepSeek**：作为系统的**最终兜底方案**，当其他厂商服务不可用时自动接管。
+
+### 2. 后端配置 (.env)
+
+在 `server/.env` 文件中配置 API Key 与首选服务商：
+
+```ini
+# 服务端口
+PORT=3000
+
+# 首选 AI 服务商 (qwen | minimax | moonshot | deepseek)
+PRIMARY_PROVIDER=qwen
+
+# --- 厂商配置 (按需填写) ---
+
+# 1. 通义千问 (Qwen)
+DASHSCOPE_API_KEY=sk-xxxxxxxxxxxx
+
+# 2. MiniMax
+MINIMAX_API_KEY=eyJxxxxxxxxxxxx
+# 企业账号需填写 Group ID，个人开发者请留空
+MINIMAX_GROUP_ID=
+
+# 3. Moonshot (Kimi)
+MOONSHOT_API_KEY=sk-xxxxxxxxxxxx
+
+# 4. DeepSeek (兜底必填)
+DEEPSEEK_API_KEY=sk-xxxxxxxxxxxx
+DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
+```
+
+### 3. 核心特性
+- **流式输出 (Streaming)**：
+  - 支持 Server-Sent Events (SSE) 协议。
+  - 前端 `ReportSummarySection` 等组件支持按模块（Section-based）实时渲染 AI 生成的内容。
+- **自动降级策略**：
+  - 系统会自动捕获 `PRIMARY_PROVIDER` 的调用错误。
+  - 一旦首选服务商失败，自动回退到 `DeepSeek` 进行重试，确保用户报告生成的成功率。
+- **统一 Prompt 管理**：
+  - 所有模型的 Prompt 逻辑集中在 `server/src/services/promptTemplates.ts`。
+  - 确保不同模型输出的 JSON 结构严格一致，兼容前端渲染组件。
+- **智能去重 (Smart Deduplication)**：
+  - 在 `client/src/utils/textSimilarity.ts` 中实现了基于 Jaccard 相似度的文本去重算法。
+  - 自动过滤 AI 生成内容中与静态数据或其他模块重复的信息，确保报告内容的独特性和高价值。
 
 ## 环境依赖
 
@@ -28,121 +149,66 @@ git clone <your-repo-url>
 cd psych-test-web-refactor
 ```
 
-### 2. 配置环境变量
-
-#### 后端配置 (DeepSeek API)
-
-在 `server` 目录下：
-
-1. 复制示例配置：
-   ```bash
-   cd server
-   cp .env.example .env   # Windows 可手动复制重命名
-   ```
-
-2. 编辑 `.env`，填入 DeepSeek API Key：
-   ```ini
-   PORT=3000
-   DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
-   DEEPSEEK_API_KEY=你的_deepseek_api_key
-   ```
-
-#### 前端配置 (本地开发)
-
-在 `client` 目录下创建 `.env.development` 文件，指定本地后端地址：
-
-```ini
-# client/.env.development
-VITE_API_URL=http://localhost:3000/api
-```
-
-> **说明**：此配置采用 **方案 A（直连模式）** 进行本地验证，前端直接请求后端接口。
-
-### 3. 安装依赖
-
-#### 前端（client）
+### 2. 安装依赖
 
 ```bash
+# 安装前端依赖
 cd client
 npm install
-```
 
-#### 后端（server）
-
-```bash
-cd server
+# 安装后端依赖
+cd ../server
 npm install
 ```
 
-### 4. 本地开发启动
+### 3. 本地开发启动
 
 建议先启动后端，再启动前端。
 
-#### 启动后端
-
+**启动后端**
 ```bash
 cd server
 npm run dev
+# 服务运行在 http://localhost:3000
 ```
-默认启动在 `http://localhost:3000`。
 
-#### 启动前端
-
+**启动前端**
 ```bash
 cd client
-npm run start  # 或 npm run dev
+npm run dev
+# 服务运行在 http://localhost:5173
 ```
-默认访问地址：`http://localhost:5173`
 
 ## 部署与 CI/CD 流程
 
 本项目支持通过 GitHub 触发 Vercel (前端) 和 Render (后端) 的自动部署。
 
-### 部署流程
-1. **代码推送**：将代码 push 到 GitHub 仓库（如 `verified-version` 或 `main` 分支）。
-2. **自动构建**：
-   - **Vercel** 检测到 commit，自动拉取代码构建前端静态资源。
-   - **Render** 检测到 commit，自动拉取代码构建后端服务。
-3. **环境同步**：确保云端环境变量已正确配置。
-
 ### 环境变量配置
 
 #### Vercel (Frontend)
 - `VITE_API_URL`: 设置为 Render 后端的完整 API 地址（例如 `https://your-backend.onrender.com/api`）。
-  - *如果不设置，将默认使用 `/api` 相对路径，并依赖 `vercel.json` 的 rewrites 规则转发（方案 B）。*
 
 #### Render (Backend)
-- `DEEPSEEK_API_KEY`: 必须配置。
-- `DEEPSEEK_API_URL`: `https://api.deepseek.com/chat/completions`
-- `PORT`: `3000` (或平台默认端口)
+- 确保配置了上述 **多 AI 模型集成** 章节中提到的所有必要的环境变量。
 
 ## 主要功能与优化
 
 ### 核心功能
 - **MBTI 测试**：支持题目进度、未答题提示。
 - **九型人格测试**：
-  - PC 端标准布局。
   - **移动端优化**：答题进度栏展开后支持 **每行 9 题** 显示，完美适配九型人格（9种类型）的视觉逻辑。
 - **多维度结果报告**：
   - 阅读指引、人格特质、个人成长、职业路径、人际关系、报告总结。
   - **移动端导航**：阅读指引页新增章节快捷跳转按钮，提升长文阅读体验。
 
-### AI 深度分析
-- **智能 Loading**：修复了 AI 分析时报告总结版块 Loading 条丢失的问题，确保用户感知数据加载状态。
-- **状态持久化**：优化了多次测试后的 AI 状态逻辑，避免开关开启但显示 Mock 数据的问题。
-- **安全集成**：API Key 仅在后端存储，前端通过 API 获取分析结果。
+### 用户体验优化
+- **智能排版**：
+  - 针对移动端优化了图表（SVG）与标题之间的间距，确保视觉舒适度。
+  - 修复了职业路径等模块在英文模式下的标题显示问题。
+- **数据兜底与验证**：
+  - 完善了“人际关系”等模块的兜底数据逻辑，确保在 AI 分析未开启或失败时仍能展示有价值的默认建议。
+  - 引入了严格的数据去重机制，防止报告中出现重复的观点。
 
 ### 国际化
 - 支持中/英双语切换，语言偏好本地持久化。
-
-## 目录引用（常用文件）
-
-- **前端页面**：
-  - `client/src/pages/ResultsPage.tsx`: 结果页主逻辑（含 AI 状态管理）。
-  - `client/src/pages/EnneagramPage.tsx`: 九型人格测试页（含移动端布局适配）。
-- **报告组件**：
-  - `client/src/components/report/ReadingGuideSection.tsx`: 阅读指引（含移动端跳转）。
-  - `client/src/components/report/ReportSummarySection.tsx`: 报告总结。
-- **配置与工具**：
-  - `client/src/utils/ai.ts`: AI 请求封装。
-  - `server/src/index.ts`: 后端入口与 CORS 配置。
+- **英文适配优化**：针对移动端英文文案进行了专门的排版优化（如防止标题换行、卡片居中对齐）。

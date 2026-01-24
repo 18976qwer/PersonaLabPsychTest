@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { StorageManager } from '../utils/storage';
-import { AIReportData, fetchDeepSeekAnalysis } from '../utils/ai';
+import { AIReportData, fetchAiAnalysis } from '../utils/ai';
 import { mockAiReportZh, mockAiReportEn } from '../data/mockAiReport';
 import { useLanguage } from '../context/LanguageContext';
 import { EnneagramResult } from '../utils/scoring';
@@ -358,11 +358,13 @@ export const AIAnalysisPage: React.FC = () => {
       } else {
         // Fetch Real Data
         try {
-            const report = await fetchDeepSeekAnalysis(
+            const report = await fetchAiAnalysis(
                 mbti,
                 String(enneagram.mainType),
                 String(enneagram.subtype),
-                language as 'zh' | 'en'
+                language as 'zh' | 'en',
+                undefined,
+                'qwen'
             );
             
             if (report) {

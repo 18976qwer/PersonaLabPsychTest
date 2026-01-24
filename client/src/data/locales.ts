@@ -20,7 +20,7 @@ export const translations = {
       subtitle: '通过 MBTI 与九型人格的深度融合，144 种独特人格类型，为你揭示最真实的内心世界。',
       start: '开始测试',
       meta: {
-        time: '约15分钟',
+        time: '约25分钟',
         privacy: '隐私保护'
       },
       features: {
@@ -43,6 +43,16 @@ export const translations = {
       instruction: '选择最能描述你的陈述。',
       nextStep: '下一步：九型人格',
       progress: '答题进度',
+      page: '页',
+      options: [
+        '强烈不同意',
+        '不同意',
+        '略微不同意',
+        '中立',
+        '略微同意',
+        '同意',
+        '强烈同意'
+      ],
     },
     enneagram: {
       title: '九型人格评估',
@@ -61,6 +71,7 @@ export const translations = {
     modal: {
       returnHomeTitle: '返回首页？',
       returnHomeMessage: '确定要返回首页吗？未完成的测试进度将丢失。',
+      returnHomeMessageResults: '确定要返回首页吗？当前的测试结果将丢失。',
       aiConfigTitle: '配置 DeepSeek API',
       aiModalDesc: '请输入您的 DeepSeek API Key 以启用实时 AI 分析。Key 将仅存储在您的本地浏览器中。',
       apiKeyLabel: 'DeepSeek API Key',
@@ -155,6 +166,7 @@ export const translations = {
           title: '组合特质概述',
           label: '化学反应：'
         },
+        analysisTitle: '优劣势分析',
         strengthsTitle: '核心优势',
         conflictsTitle: '内在冲突',
         timelineTitle: '时间线推测',
@@ -295,7 +307,7 @@ export const translations = {
       subtitle: 'Through the deep integration of MBTI and the Enneagram, 144 unique personality types reveal the truest version of your inner world.',
       start: 'Start Assessment',
       meta: {
-        time: 'About 15 minutes',
+        time: 'About 25 minutes',
         privacy: 'Privacy protected'
       },
       features: {
@@ -362,6 +374,7 @@ export const translations = {
     modal: {
       returnHomeTitle: 'Return to Home?',
       returnHomeMessage: 'Are you sure you want to return to the home page? Your current test progress will be lost.',
+      returnHomeMessageResults: 'Are you sure you want to return to the home page? Current test results will be lost.',
       aiConfigTitle: 'AI Configuration',
       apiKeyLabel: 'DeepSeek API Key',
       apiKeyPlaceholder: 'Enter your DeepSeek API Key',
@@ -454,6 +467,7 @@ export const translations = {
           title: 'Combined Trait Overview',
           label: 'Chemistry:'
         },
+        analysisTitle: 'Strengths & Weaknesses Analysis',
         strengthsTitle: 'Core Strengths',
         conflictsTitle: 'Inner Conflicts',
         timelineTitle: 'Timeline Projection',

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { StorageManager } from '../utils/storage';
@@ -6,7 +6,7 @@ import { useAi } from '../context/AiContext';
 import { mockAnalysisData } from '../data/mockAnalysisData';
 import { AnalysisResult } from '../types/report';
 import { useLanguage } from '../context/LanguageContext';
-import { AIReportData, fetchDeepSeekAnalysis } from '../utils/ai';
+import { AIReportData, fetchAiAnalysis, subscribeAiAnalysisStream } from '../utils/ai';
 import { mbtiDescriptionsEn, mbtiDescriptionsZh } from '../data/mbti';
 import { enneagramDescriptionsZh, enneagramDescriptionsEn } from '../data/enneagram';
 
@@ -86,16 +86,16 @@ const ActionButton = styled.button<{ $primary?: boolean }>`
   }
 `;
 
-const buildDynamicChatgptPrompt = (mbti: string, mainType: number, subtype: number) => {
+const buildDynamicChatgptPrompt = (mbti: string, mainType: number, subtype: number, identity: string) => {
   return (
-    `My 16 Type is ${mbti}, my Enneagram Type is ${mainType}, and my subtype is ${subtype}. ` +
+    `My 16 Type is ${mbti}-${identity}, my Enneagram Type is ${mainType}, and my subtype is ${subtype}. ` +
     'Based on these results, please provide a comprehensive and deep psychological analysis:\n\n' +
     '1. **Core Personality Analysis**:\n' +
-    `   - The unique chemistry between ${mbti} and Enneagram Type ${mainType} (Wing ${subtype}).\n` +
+    `   - The unique chemistry between ${mbti}-${identity} and Enneagram Type ${mainType} (Wing ${subtype}).\n` +
     '   - Key strengths and hidden talents.\n' +
     '   - Deep-seated motivations and fears.\n\n' +
     '2. **Inner Conflicts & Struggles**:\n' +
-    '   - Contradictions between my MBTI cognitive functions and Enneagram motivations.\n' +
+    `   - Contradictions between my MBTI (${mbti}-${identity}) cognitive functions and Enneagram motivations.\n` +
     '   - The specific type of loneliness or misunderstanding I often experience.\n' +
     '   - Common stress triggers and unhealthy coping mechanisms.\n\n' +
     '3. **Growth & Development**:\n' +
@@ -128,7 +128,8 @@ const buildDynamicReportData = (
   base: AnalysisResult,
   mbti: string | null,
   enneagram: any,
-  language: string
+  language: string,
+  identity: string = 'A'
 ): AnalysisResult => {
   if (!mbti || !enneagram) return base;
 
@@ -146,7 +147,7 @@ const buildDynamicReportData = (
   const characterTypeCn = `${mbtiInfoZh ? mbtiInfoZh.title : mbti} × ${
     mainInfoZh ? mainInfoZh.title : `${mainType}号`
   }`;
-  const characterTypeEn = `${mbti}-${mainType}`;
+  const characterTypeEn = `${mbti}-${identity}-${mainType}`;
 
   const summaryMbti = `${mbti}：${
     mbtiInfoZh ? mbtiInfoZh.description : '你的思维方式兼具独特的优势和挑战。'
@@ -214,7 +215,7 @@ const buildDynamicReportData = (
     }))
   };
 
-  const dynamicChatgptPrompt = buildDynamicChatgptPrompt(mbti, mainType, subtype);
+  const dynamicChatgptPrompt = buildDynamicChatgptPrompt(mbti, mainType, subtype, identity);
 
   return {
     ...base,
@@ -245,69 +246,159 @@ const buildDynamicReportData = (
 export const ResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { isAiEnabled, aiLoading, setAiLoading } = useAi();
+  const { isAiEnabled, setIsAiEnabled, aiLoading, setAiLoading, provider, streamEnabled } = useAi();
   const { t, language } = useLanguage();
   const [reportData, setReportData] = useState<AnalysisResult>(mockAnalysisData);
   const [aiReport, setAiReport] = useState<AIReportData | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [reportId] = useState(() => Math.random().toString(36).substr(2, 9).toUpperCase());
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const aiReportCache = useRef<{ zh?: AIReportData | null; en?: AIReportData | null }>({});
+  const inFlightKeyRef = useRef<string | null>(null);
+  const subscribedRef = useRef<boolean>(false);
+  const esRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    setIsAiEnabled(true);
+    setAiLoading(false);
+    setAiError(null);
+    subscribedRef.current = false;
+    inFlightKeyRef.current = null;
+  }, []);
 
   // Trigger AI fetch when enabled globally
   useEffect(() => {
     if (isAiEnabled) {
+      const currentLang = language === 'zh' ? 'zh' : 'en';
+      const mbtiResult = StorageManager.getItem<string>('mbti_result');
+      const enneagramResult = StorageManager.getItem<any>('enneagram_result');
+      const mbtiIdentity = StorageManager.getItem<string>('mbti_identity') || 'A';
+      const mbtiFull = mbtiResult ? `${mbtiResult}-${mbtiIdentity}` : '';
+      const requestKey = `${mbtiFull}|${String(enneagramResult?.mainType || '')}|${String(enneagramResult?.subtype || '')}|${currentLang}`;
+      const lastKey = StorageManager.getItem<string>('last_ai_request_key') || '';
+      if (requestKey && requestKey !== lastKey) {
+        aiReportCache.current = {};
+        setAiReport(null);
+        StorageManager.setItem('last_ai_request_key', requestKey);
+      }
       // Check if we already have data
-      const hasFullData = aiReport && 
-        aiReport.traits && 
-        aiReport.growth && 
-        aiReport.career && 
-        aiReport.relationships && 
-        aiReport.summary;
+      const cached = aiReportCache.current[currentLang] || null;
+      const hasFullData = Boolean(
+        (cached && cached.traits && cached.growth && cached.career && cached.relationships && cached.summary) ||
+        (aiReport && aiReport.traits && aiReport.growth && aiReport.career && aiReport.relationships && aiReport.summary)
+      );
+
+      // If we have cached full data for current language but aiReport is not set, restore from cache
+      if (cached && !aiReport) {
+        setAiReport(cached);
+        return;
+      }
 
       if (!hasFullData && !aiLoading && !aiError) {
-        setAiLoading(true);
         const mbtiResult = StorageManager.getItem<string>('mbti_result');
         const enneagramResult = StorageManager.getItem<any>('enneagram_result');
+        const mbtiIdentity = StorageManager.getItem<string>('mbti_identity') || 'A';
+        const mbtiFull = mbtiResult ? `${mbtiResult}-${mbtiIdentity}` : '';
         
         if (!mbtiResult || !enneagramResult) {
-          setAiLoading(false);
           return;
         }
 
-        const lang = language === 'zh' ? 'zh' : 'en';
-
-        fetchDeepSeekAnalysis(
-          mbtiResult,
-          String(enneagramResult.mainType),
-          String(enneagramResult.subtype),
-          lang
-        )
-          .then(data => {
-            if (data) {
-              setAiReport(prev => {
-                if (!prev) return data as AIReportData;
-                return {
-                  ...prev,
-                  ...data
-                };
-              });
-              setAiError(null);
-            } else {
-              setAiError(t('results.aiNoData'));
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            setAiError(t('results.aiError'));
-          })
-          .finally(() => {
+        const lang = currentLang;
+        const requestKey = `${mbtiFull}|${String(enneagramResult.mainType)}|${String(enneagramResult.subtype)}|${lang}`;
+        if (streamEnabled) {
+          // Guard against duplicate subscriptions (e.g., React StrictMode double-invocation)
+          if (subscribedRef.current && inFlightKeyRef.current === requestKey) {
             setAiLoading(false);
-          });
+            return;
+          }
+          inFlightKeyRef.current = requestKey;
+          subscribedRef.current = true;
+        }
+
+        if (streamEnabled) {
+          if (!esRef.current) {
+            setAiLoading(true);
+            const es = subscribeAiAnalysisStream(
+            {
+              mbti: mbtiFull,
+              mainType: String(enneagramResult.mainType),
+              subtype: String(enneagramResult.subtype),
+              lang,
+              provider
+            },
+            (_m, data) => {
+              setAiReport(prev => {
+                const merged = prev ? { ...prev, ...data } : (data as AIReportData);
+                // Update language cache incrementally
+                const prevCache = aiReportCache.current[lang] || null;
+                aiReportCache.current[lang] = prevCache ? { ...prevCache, ...data } : merged;
+                return merged;
+              });
+            },
+            () => {
+              setAiLoading(false);
+              setAiError(null);
+              subscribedRef.current = false;
+                esRef.current?.close();
+                esRef.current = null;
+            },
+            () => {
+              setAiLoading(false);
+              setAiError(t('results.aiError'));
+              subscribedRef.current = false;
+                esRef.current?.close();
+                esRef.current = null;
+            }
+            );
+            esRef.current = es;
+          }
+        } else {
+          setAiLoading(true);
+          fetchAiAnalysis(
+            mbtiFull,
+            String(enneagramResult.mainType),
+            String(enneagramResult.subtype),
+            lang,
+            undefined,
+            provider
+          )
+            .then(data => {
+              if (data) {
+                setAiReport(prev => {
+                  const merged = prev ? { ...prev, ...data } : (data as AIReportData);
+                  aiReportCache.current[lang] = merged;
+                  return merged;
+                });
+                setAiError(null);
+              } else {
+                setAiError(t('results.aiNoData'));
+              }
+            })
+            .catch(() => {
+              setAiError(t('results.aiError'));
+            })
+            .finally(() => {
+              setAiLoading(false);
+            });
+        }
       }
     }
   }, [isAiEnabled, language, t, aiReport, aiLoading, aiError]);
 
+  useEffect(() => {
+    return () => {
+      try {
+        esRef.current?.close();
+      } catch {}
+      subscribedRef.current = false;
+      inFlightKeyRef.current = null;
+      esRef.current = null;
+    };
+  }, []);
+
   const mbtiLetterCounts = StorageManager.getItem<Record<string, number>>('mbti_letter_counts') || {};
+  const mbtiIdentityCounts = StorageManager.getItem<Record<string, number>>('mbti_identity_counts') || {};
 
   const buildDimensionValue = (leftKey: string, rightKey: string) => {
     const left = mbtiLetterCounts[leftKey] || 0;
@@ -315,6 +406,14 @@ export const ResultsPage: React.FC = () => {
     const total = left + right;
     if (!total) return 50;
     return Math.round((right / total) * 100);
+  };
+
+  const buildIdentityValue = () => {
+    const a = mbtiIdentityCounts['A'] || 0;
+    const tVal = mbtiIdentityCounts['T'] || 0;
+    const total = a + tVal;
+    if (!total) return 50;
+    return Math.round((tVal / total) * 100);
   };
 
   const testDimensions = [
@@ -345,6 +444,13 @@ export const ResultsPage: React.FC = () => {
       rightLabel: t('report.dimension.perceiving'),
       value: buildDimensionValue('J', 'P'),
       color: theme.colors.mbti.P
+    },
+    {
+      label: 'A / T',
+      leftLabel: language === 'zh' ? '坚决' : 'Assertive',
+      rightLabel: language === 'zh' ? '动荡' : 'Turbulent',
+      value: buildIdentityValue(),
+      color: '#4fd1c5' // Teal-like color
     }
   ];
 
@@ -358,11 +464,15 @@ export const ResultsPage: React.FC = () => {
       // navigate('/mbti'); // Commented out for dev convenience
     }
 
+    const mbtiIdentity = StorageManager.getItem<string>('mbti_identity') || 'A';
     const baseData = mockAnalysisData;
-    const dynamicData = buildDynamicReportData(baseData, mbtiResult, enneagramResult, language);
+    const dynamicData = buildDynamicReportData(baseData, mbtiResult, enneagramResult, language, mbtiIdentity);
     setReportData(dynamicData);
     
-    setAiReport(null);
+    // Restore AI report from cache when switching language (if available)
+    const currentLang = language === 'zh' ? 'zh' : 'en';
+    const cached = aiReportCache.current[currentLang] || null;
+    setAiReport(cached);
     setAiError(null);
   }, [language, t]);
 
@@ -377,10 +487,34 @@ export const ResultsPage: React.FC = () => {
     window.print();
   };
 
-  const mbtiResult = StorageManager.getItem<string>('mbti_result') || 'ISTP';
+  const mbtiResult = StorageManager.getItem<string>('mbti_type_full') || 
+    `${StorageManager.getItem<string>('mbti_result') || 'ISTP'}-${StorageManager.getItem<string>('mbti_identity') || 'A'}`;
   const enneagramResult = StorageManager.getItem<any>('enneagram_result') || { mainType: 5, subtype: 6 };
   const mainType = Number(enneagramResult.mainType);
   const wingType = Number(enneagramResult.subtype);
+
+  const buildEnneagramRadar = () => {
+    const scores = (enneagramResult && enneagramResult.scores) || null;
+    if (!scores) return [];
+    const vals = Object.values(scores).map(v => Number(v));
+    const max = Math.max(...vals);
+    const min = Math.min(...vals);
+    const range = max - min;
+    const normalize = (v: number) => {
+      if (range === 0) return 50;
+      return Math.round(((v - min) / range) * 100);
+    };
+    const data = [];
+    for (let i = 1; i <= 9; i++) {
+      const v = normalize(scores[i] || 0);
+      const subject =
+        language === 'zh'
+          ? `${i}号`
+          : `Type ${i}`;
+      data.push({ subject, value: v });
+    }
+    return data;
+  };
 
   const buildEnneagramLabel = (type: number) => {
     if (!type) return '';
@@ -397,6 +531,28 @@ export const ResultsPage: React.FC = () => {
 
   const primaryEnneagramLabel = buildEnneagramLabel(mainType);
   const wingEnneagramLabel = buildEnneagramLabel(wingType);
+  const enneagramRadarData = buildEnneagramRadar();
+  
+  const mainInfo =
+    language === 'zh'
+      ? {
+          title: primaryEnneagramLabel,
+          desc: enneagramDescriptionsZh[mainType]?.description || ''
+        }
+      : {
+          title: primaryEnneagramLabel,
+          desc: enneagramDescriptionsEn[mainType]?.description || ''
+        };
+  const wingInfo =
+    language === 'zh'
+      ? {
+          title: wingEnneagramLabel,
+          desc: enneagramDescriptionsZh[wingType]?.description || ''
+        }
+      : {
+          title: wingEnneagramLabel,
+          desc: enneagramDescriptionsEn[wingType]?.description || ''
+        };
   
   const shareData = {
     mbti: mbtiResult,
@@ -421,6 +577,39 @@ export const ResultsPage: React.FC = () => {
         </p>
       </Header>
 
+      {isAiEnabled && !aiLoading && aiError && (
+        <div style={{
+          background: '#fff5f5',
+          border: '1px solid #feb2b2',
+          color: '#c53030',
+          padding: '1rem',
+          borderRadius: '8px',
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <span style={{ fontWeight: 500 }}>⚠️ {aiError} (已降级为标准报告)</span>
+          <button 
+            onClick={() => setAiError(null)} 
+            style={{
+              background: '#c53030',
+              color: 'white',
+              border: 'none',
+              padding: '0.4rem 1rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '0.9rem'
+            }}
+          >
+            {t('common.retry') || '重试 / Retry'}
+          </button>
+        </div>
+      )}
+
       <ReadingGuideSection 
         data={reportData.readingGuide} 
         primaryEnneagram={primaryEnneagramLabel}
@@ -429,7 +618,10 @@ export const ResultsPage: React.FC = () => {
 
       <DataVisualizationSection 
         mbtiType={mbtiResult} 
-        dimensions={testDimensions} 
+        dimensions={testDimensions}
+        enneagramRadarData={enneagramRadarData}
+        mainInfo={mainInfo}
+        wingInfo={wingInfo}
       />
 
       <PersonalityTraitsSection
@@ -464,19 +656,6 @@ export const ResultsPage: React.FC = () => {
       />
 
       <ChatGPTPromptSection prompt={reportData.chatgptPrompt} />
-
-      {isAiEnabled && !aiReport && !aiLoading && aiError && (
-        <div
-          style={{
-            marginTop: '2rem',
-            textAlign: 'center',
-            color: '#e53e3e',
-            fontSize: '0.9rem'
-          }}
-        >
-          {aiError}
-        </div>
-      )}
 
       <FooterActions>
         <ActionButton onClick={handlePrint} $primary>

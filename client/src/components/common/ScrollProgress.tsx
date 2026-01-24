@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, useScroll, useSpring } from 'framer-motion';
 

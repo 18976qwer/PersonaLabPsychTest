@@ -193,15 +193,15 @@ export const mbtiQuestionsZh: MBTIQuestion[] = [
     dimension: 'SN',
     options: [
       { label: "当给出具体、详细的指示时，我感到很舒服。", value: 'S' },
-      { label: "我对细节感到厌烦，更喜欢一般性的概念。", value: 'N' }
+      { label: "相比琐碎细节，我更关注核心概念与逻辑脉络。", value: 'N' }
     ]
   },
   {
     id: 7,
     dimension: 'SN',
     options: [
-      { label: "我相信我能看到、听到和触摸到的东西（事实）。", value: 'S' },
-      { label: "我相信我的直觉和想象力（模式）。", value: 'N' }
+      { label: "我看重可验证的事实与具体的经验。", value: 'S' },
+      { label: "我看重事物背后的规律与模式。", value: 'N' }
     ]
   },
   {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { StorageManager } from '../utils/storage';
 
-export const RequireMBTI: React.FC<{ children: JSX.Element }> = ({ children }) => {
+export const RequireMBTI: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const mbtiResult = StorageManager.getItem('mbti_result');
   const location = useLocation();
 
@@ -13,7 +13,7 @@ export const RequireMBTI: React.FC<{ children: JSX.Element }> = ({ children }) =
   return children;
 };
 
-export const RequireResults: React.FC<{ children: JSX.Element }> = ({ children }) => {
+export const RequireResults: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const enneagramResult = StorageManager.getItem('enneagram_result');
   const location = useLocation();
 

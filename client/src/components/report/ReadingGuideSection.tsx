@@ -5,7 +5,6 @@ import { ReportSection } from './ReportSection';
 import { AnalysisResult } from '../../types/report';
 import { useLanguage } from '../../context/LanguageContext';
 import { motion } from 'framer-motion';
-import { FaLink } from 'react-icons/fa';
 
 const HeroContainer = styled(motion.div)`
   background: ${({ theme }) => theme.colors.white};
@@ -77,6 +76,10 @@ const BigType = styled.h2`
   
   span {
     color: rgb(255, 217, 217);
+  }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+    font-size: 3.5rem;
   }
 `;
 
@@ -321,6 +324,10 @@ const QuestionList = styled(StyledList)`
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
   }
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    justify-items: center;
+  }
 `;
 
 const QuestionItem = styled(ListItem)`
@@ -341,35 +348,11 @@ const QuestionItem = styled(ListItem)`
     border-color: ${({ theme }) => theme.colors.primary};
   }
 
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
     padding: 1.2rem;
-  }
-`;
-
-const MobileQuickNav = styled.div`
-  display: none;
-  margin: 1rem 0 2rem;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    display: flex;
-  }
-`;
-
-const QuickNavItem = styled.button`
-  border: 1px solid ${({ theme }) => theme.colors.primary};
-  background: white;
-  color: ${({ theme }) => theme.colors.primary};
-  padding: 0.5rem 0.8rem;
-  border-radius: 999px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:active {
-    background: ${({ theme }) => `${theme.colors.primary}10`};
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
   }
 `;
 
@@ -425,21 +408,6 @@ interface Props {
 export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, wingEnneagram }) => {
   const { language, t } = useLanguage();
   
-  const handleScroll = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      // Mobile breakpoint from theme is 480px
-      const isMobile = window.innerWidth <= 480;
-      // Mobile: Header (56px) + Nav (approx 50px) + padding
-      // Desktop: Header (56px) + padding
-      const offset = isMobile ? 140 : 80;
-      
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      const offsetPosition = elementPosition - offset;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-    }
-  };
-
   // Use dynamic data if available, otherwise fallback to mock
   const keywords = data.keywords || t('report.readingGuideData.keywords', { returnObjects: true }) as string[];
   const oneLiner = data.oneLiner || t('report.readingGuideData.oneLiner');
@@ -472,8 +440,8 @@ export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, w
             </SectionLabel>
             
             <BigType>
-              {data.characterType.en.split('-')[0]}
-              <span>-{data.characterType.en.split('-')[1]}</span>
+              {data.characterType.en.substring(0, data.characterType.en.lastIndexOf('-'))}
+              <span>{data.characterType.en.substring(data.characterType.en.lastIndexOf('-'))}</span>
             </BigType>
             
             <Subtitle>
@@ -523,23 +491,6 @@ export const ReadingGuideSection: React.FC<Props> = ({ data, primaryEnneagram, w
         </HeaderSection>
         
         <ContentSection>
-          <MobileQuickNav>
-            <QuickNavItem onClick={() => handleScroll('traits')}>
-              <FaLink style={{ marginRight: 6 }} />{t('report.traits')}
-            </QuickNavItem>
-            <QuickNavItem onClick={() => handleScroll('growth')}>
-              <FaLink style={{ marginRight: 6 }} />{t('report.growth')}
-            </QuickNavItem>
-            <QuickNavItem onClick={() => handleScroll('career')}>
-              <FaLink style={{ marginRight: 6 }} />{t('report.career')}
-            </QuickNavItem>
-            <QuickNavItem onClick={() => handleScroll('relationships')}>
-              <FaLink style={{ marginRight: 6 }} />{t('report.relationships')}
-            </QuickNavItem>
-            <QuickNavItem onClick={() => handleScroll('summary')}>
-              <FaLink style={{ marginRight: 6 }} />{t('report.summary')}
-            </QuickNavItem>
-          </MobileQuickNav>
           <GuideGroup>
             <GuideTitle>
               <FaLayerGroup /> 

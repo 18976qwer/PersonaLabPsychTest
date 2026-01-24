@@ -90,27 +90,15 @@ export interface AIReportData {
   prompt?: string;
 }
 
-export const fetchDeepSeekAnalysis = async (
+export const fetchAiAnalysis = async (
   mbti: string, 
   mainType: string, 
   subtype: string, 
   lang: 'zh' | 'en',
-  modules?: string[]
+  modules?: string[],
+  provider?: 'qwen' | 'minimax' | 'moonshot' | 'deepseek'
 ): Promise<Partial<AIReportData> | null> => {
-  // Client no longer needs API Key. It's handled on the server.
-  // const apiKey = StorageManager.getItem<string>('deepseek_api_key');
-  
-  console.log('fetchDeepSeekAnalysis calling Server API with:', {
-    mbti,
-    enneagram: `${mainType}w${subtype}`,
-    lang,
-    modules
-  });
-
   try {
-    // Determine the full URL. 
-    // If API_BASE_URL starts with http, use it as is.
-    // Otherwise ensure it has no trailing slash and append endpoint.
     const baseUrl = API_BASE_URL.replace(/\/$/, '');
     const endpoint = `${baseUrl}/generate-report`;
 
@@ -124,20 +112,66 @@ export const fetchDeepSeekAnalysis = async (
         mainType,
         subtype,
         lang,
-        modules
+        modules,
+        provider
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Server Error:', response.status, errorText);
       throw new Error(`Server API Error (${response.status}): ${errorText}`);
     }
 
     const data = await response.json();
     return data as Partial<AIReportData>;
   } catch (error) {
-    console.error('API Request Failed:', error);
     throw error;
   }
 };
+
+export const subscribeAiAnalysisStream = (
+  params: {
+    mbti: string
+    mainType: string
+    subtype: string
+    lang: 'zh' | 'en'
+    modules?: string[]
+    provider?: 'qwen' | 'minimax' | 'moonshot' | 'deepseek'
+  },
+  onModule: (m: string, data: Partial<AIReportData>) => void,
+  onDone?: () => void,
+  onError?: (e: any) => void
+) => {
+  const baseUrl = API_BASE_URL.replace(/\/$/, '');
+  const qs = new URLSearchParams({
+    mbti: params.mbti,
+    mainType: params.mainType,
+    subtype: params.subtype,
+    lang: params.lang,
+    provider: params.provider || 'qwen',
+    modules: (params.modules && params.modules.length ? params.modules.join(',') : '')
+  }).toString();
+  const url = `${baseUrl}/generate-report/stream?${qs}`;
+  const es = new EventSource(url);
+  es.addEventListener('module', (ev) => {
+    try {
+      const payload = JSON.parse((ev as MessageEvent).data);
+      if (payload && payload.m && payload.data) onModule(payload.m, payload.data);
+    } catch {}
+  });
+  es.addEventListener('refine', (ev) => {
+    try {
+      const payload = JSON.parse((ev as MessageEvent).data);
+      if (payload && payload.m && payload.data) onModule(payload.m, payload.data);
+    } catch {}
+  });
+  es.addEventListener('done', () => {
+    if (onDone) onDone();
+    es.close();
+  });
+  es.addEventListener('error', (e) => {
+    if (onError) onError(e);
+    es.close();
+  });
+  return es;
+}

@@ -7,6 +7,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { AIReportData } from '../../utils/ai';
 import { motion } from 'framer-motion';
 import { ProcessList, ProcessItem, ProcessContent } from '../common/ResponsiveStyles';
+import { filterDuplicates } from '../../utils/textSimilarity';
 
 const SectionHeader = styled.h3`
   font-size: 1.4rem;
@@ -282,6 +283,37 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
 }) => {
   const { t } = useLanguage();
 
+  const normalizeText = (s: string) =>
+    String(s || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const splitSentences = (s: string, lang: 'zh' | 'en') => {
+    const text = String(s || '').trim();
+    if (!text) return [];
+    const parts = lang === 'zh' ? text.split(/[。！？]+/).map(v => v.trim()) : text.split(/[.!?]+/).map(v => v.trim());
+    return parts.filter(Boolean);
+  };
+
+  const dedupeConclusion = (overview: string, conclusion: string, lang: 'zh' | 'en') => {
+    const oSent = splitSentences(overview, lang);
+    const cSent = splitSentences(conclusion, lang);
+    if (!cSent.length) return conclusion;
+    const oNorm = oSent.map(normalizeText);
+    const filtered = cSent.filter(cs => {
+      const cn = normalizeText(cs);
+      return !oNorm.some(on => cn && (cn === on || cn.includes(on) || on.includes(cn)));
+    });
+    const outList = filtered.length ? filtered : [cSent[0]];
+    const joiner = lang === 'zh' ? '。' : '. ';
+    let result = outList.join(joiner).trim();
+    if (lang === 'zh' && !/[。！？]$/.test(result)) result += '。';
+    if (lang === 'en' && !/[.!?]$/.test(result)) result += '.';
+    return result;
+  };
+
   const decodingRows = isAiEnabled && aiReport && aiReport.decoding
     ? [
         { driver: aiReport.decoding.strategic.drive, manifestation: aiReport.decoding.strategic.manifestation },
@@ -299,10 +331,11 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
     isAiEnabled && aiReport && aiReport.decoding && aiReport.decoding.chemistry
       ? aiReport.decoding.chemistry
       : data.detailAnalysis.chemistryConclusion;
+  const displayChemistryConclusion = dedupeConclusion(chemistryText, chemistryConclusionText, (useLanguage() as any).language);
 
   type StrengthItem = { title: string; desc: string };
 
-  const strengths: StrengthItem[] =
+  let strengths: StrengthItem[] =
     isAiEnabled &&
     aiReport &&
     aiReport.combo &&
@@ -311,7 +344,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
       ? (aiReport.combo.strengths as StrengthItem[])
       : data.detailAnalysis.strengths;
 
-  const conflicts: StrengthItem[] =
+  let conflicts: StrengthItem[] =
     isAiEnabled &&
     aiReport &&
     aiReport.combo &&
@@ -319,6 +352,10 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
     aiReport.combo.conflicts.length > 0
       ? (aiReport.combo.conflicts as StrengthItem[])
       : data.detailAnalysis.conflicts;
+
+  // Cross-dedupe: strengths vs conflicts
+  strengths = filterDuplicates(strengths, [conflicts], 0.8);
+  conflicts = filterDuplicates(conflicts, [strengths], 0.8);
 
   const hasPastTimeline =
     isAiEnabled &&
@@ -381,7 +418,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
                 </LevelBadge>
                 <TheoryBadge>{theoryLabel}</TheoryBadge>
               </CardHeader>
-              {isAiEnabled && aiLoading ? (
+              {isAiEnabled && aiLoading && !(aiReport && aiReport.decoding) ? (
                  <>
                    <div style={{ marginBottom: '0.3rem' }}>
                      <h4>{t('report.traitsSection.decoding.driver')}</h4>
@@ -411,20 +448,21 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
 
       <ChemistryBox>
         <ChemistryTitle><FaQuoteLeft /> {t('report.traitsSection.chemistry.title')}</ChemistryTitle>
-        {isAiEnabled && aiLoading ? <SkeletonBlock width="100%" height="80px" /> : (
+        {isAiEnabled && aiLoading && !(aiReport && (aiReport.combo || aiReport.decoding)) ? <SkeletonBlock width="100%" height="80px" /> : (
           <>
             <p style={{ lineHeight: 1.7, color: '#4A5568' }}>{chemistryText}</p>
             <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-              <strong style={{ color: '#2D3748' }}>{t('report.traitsSection.chemistry.label')}</strong> {chemistryConclusionText}
+              <strong style={{ color: '#2D3748' }}>{t('report.traitsSection.chemistry.label')}</strong> {displayChemistryConclusion}
             </div>
           </>
         )}
       </ChemistryBox>
 
+      <SectionHeader>{t('report.traitsSection.analysisTitle')}</SectionHeader>
       <ListGrid>
         <ListCard $type="strength" whileHover={{ y: -5 }}>
           <h3><FaStar /> {t('report.traitsSection.strengthsTitle')}</h3>
-          {isAiEnabled && aiLoading ? <SkeletonBlock height="200px" /> : (
+          {isAiEnabled && aiLoading && !(aiReport && aiReport.combo && Array.isArray(aiReport.combo.strengths)) ? <SkeletonBlock height="200px" /> : (
             <ProcessList>
               {strengths.map((item, idx) => (
                 <ProcessItem key={idx}>
@@ -439,7 +477,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
         </ListCard>
         <ListCard $type="conflict" whileHover={{ y: -5 }}>
           <h3><FaExclamationTriangle /> {t('report.traitsSection.conflictsTitle')}</h3>
-          {isAiEnabled && aiLoading ? <SkeletonBlock height="200px" /> : (
+          {isAiEnabled && aiLoading && !(aiReport && aiReport.combo && Array.isArray(aiReport.combo.conflicts)) ? <SkeletonBlock height="200px" /> : (
             <ProcessList>
               {conflicts.map((item, idx) => (
                 <ProcessItem key={idx}>
@@ -458,7 +496,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
       <TimelineBox>
         <TimeCard whileHover={{ y: -5 }}>
           <h3><FaHourglassHalf /> {t('report.traitsSection.pastTitle')}</h3>
-          {isAiEnabled && aiLoading ? <SkeletonBlock height="100px" /> : (
+          {isAiEnabled && aiLoading && !hasPastTimeline ? <SkeletonBlock height="100px" /> : (
             <ProcessList>
               {pastTimeline.map((item, idx) => (
                 <ProcessItem key={idx}>
@@ -472,7 +510,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
         </TimeCard>
         <TimeCard whileHover={{ y: -5 }}>
           <h3><FaHourglassHalf /> {t('report.traitsSection.futureTitle')}</h3>
-          {isAiEnabled && aiLoading ? <SkeletonBlock height="100px" /> : (
+          {isAiEnabled && aiLoading && !hasFutureTimeline ? <SkeletonBlock height="100px" /> : (
             <ProcessList>
               {futureTimeline.map((item, idx) => (
                 <ProcessItem key={idx}>
@@ -488,7 +526,7 @@ export const PersonalityTraitsSection: React.FC<Props> = ({
 
       <QuoteContainer>
         <QuoteIcon><FaQuoteLeft /></QuoteIcon>
-        {isAiEnabled && aiLoading ? <SkeletonBlock height="80px" /> : (
+        {isAiEnabled && aiLoading && !(aiReport && aiReport.subjective) ? <SkeletonBlock height="80px" /> : (
           <>
             <QuoteText>"{portraitText}"</QuoteText>
             {uniquenessText && (

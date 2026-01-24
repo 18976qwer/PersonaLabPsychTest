@@ -15,9 +15,12 @@ const SectionContainer = styled(motion.div)`
   overflow: hidden;
   border: 1px solid rgba(0,0,0,0.02);
 
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
     padding: 1.2rem;
     margin-top: 1.5rem;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
   }
 `;
 
@@ -57,6 +60,12 @@ const ChatInterface = styled.div`
   flex-direction: column;
   gap: 1.5rem;
   box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+  
+  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
+  }
 `;
 
 const AvatarRow = styled.div`

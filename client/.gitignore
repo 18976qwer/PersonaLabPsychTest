@@ -10,16 +10,12 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-<<<<<<< SEARCH
 *.local
-
-# Editor directories and files
-=======
-*.local
+.env
+.env.local
 .env.development
 
 # Editor directories and files
->>>>>>> REPLACE
 .vscode/*
 !.vscode/extensions.json
 .idea

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { StorageManager } from '../utils/storage';
 
@@ -122,6 +123,7 @@ interface AIConfigModalProps {
 
 export const AIConfigModal: React.FC<AIConfigModalProps> = ({ isOpen, onClose, onSave }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [apiKey, setApiKey] = useState('');
   const [isEnabled, setIsEnabled] = useState(true);
 

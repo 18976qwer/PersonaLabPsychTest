@@ -20,6 +20,42 @@ const NavContainer = styled.div`
   }
 `;
 
+const DesktopNav = styled.nav`
+  position: fixed;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  z-index: 100;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+
+  @media (max-width: 1280px) {
+    display: none;
+  }
+`;
+
+const DesktopNavItem = styled.a`
+  color: ${({ theme }) => theme.colors.textLight};
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  
+  &:hover {
+    color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme }) => `${theme.colors.primary}10`};
+  }
+`;
+
 const NavHeader = styled.div`
   display: flex;
   align-items: center;
@@ -105,8 +141,24 @@ export const ReportNavigation: React.FC = () => {
   };
 
   return (
-    <NavContainer>
-      <NavHeader onClick={() => setIsOpen(!isOpen)}>
+    <>
+      <DesktopNav>
+        <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#2d3748' }}>{t('report.pageTitle')}</h4>
+        {menuItems.map(item => (
+          <DesktopNavItem
+            key={item.id}
+            onClick={(e) => {
+              e.preventDefault();
+              handleScroll(item.id);
+            }}
+          >
+            {item.label}
+          </DesktopNavItem>
+        ))}
+      </DesktopNav>
+
+      <NavContainer>
+        <NavHeader onClick={() => setIsOpen(!isOpen)}>
         <h3>
           <FaBookOpen size={16} color="#4FD1C5" />
           {t('report.readingGuide')}
@@ -137,5 +189,6 @@ export const ReportNavigation: React.FC = () => {
         )}
       </AnimatePresence>
     </NavContainer>
+    </>
   );
 };

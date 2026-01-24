@@ -16,6 +16,7 @@ import { ReportSection } from './ReportSection';
 import { AnalysisResult } from '../../types/report';
 import { useLanguage } from '../../context/LanguageContext';
 import { AIReportData } from '../../utils/ai';
+import { sanitizeZh } from '../../utils/textSimilarity';
 import {
   DesktopTableContainer,
   MobileCardContainer,
@@ -211,8 +212,8 @@ const LevelDescription = styled.div`
 
 const ListUl = styled.ul`
   margin: 0;
-  padding-left: 1.4rem;
-  list-style-type: decimal;
+  padding-left: 0;
+  list-style-type: none;
   
   li {
     margin-bottom: 0.5rem;
@@ -249,7 +250,7 @@ interface Props {
   showAiToggle?: boolean;
 }
 
-const splitReactionList = (text: string, maxItems = 3): string[] => {
+const splitReactionList = (text: string, maxItems = 2): string[] => {
   if (!text) {
     return [];
   }
@@ -258,8 +259,9 @@ const splitReactionList = (text: string, maxItems = 3): string[] => {
     .map(s => s.trim())
     .filter(Boolean)
     .join(' ');
+  // English模式易因句点拆分导致半句；仅按分号与中文分号拆分
   let segments = merged
-    .split(/[；;。.!?]/)
+    .split(/[；;]/)
     .map(s => s.trim())
     .filter(Boolean);
   if (!segments.length) {
@@ -267,7 +269,7 @@ const splitReactionList = (text: string, maxItems = 3): string[] => {
   }
   if (segments.length === 1) {
     const subSegments = segments[0]
-      .split(/[，,]/)
+      .split(/[，;]/) // 避免按英文逗号拆分导致半句
       .map(s => s.trim())
       .filter(Boolean);
     if (subSegments.length > 1) {
@@ -284,6 +286,12 @@ const parseReactionItem = (text: string) => {
   if (!text) {
     return { label: '', desc: '' };
   }
+  const enColonIndex = text.indexOf(':');
+  if (enColonIndex !== -1) {
+    const label = text.slice(0, enColonIndex).trim();
+    const desc = text.slice(enColonIndex + 1).trim();
+    return { label, desc };
+  }
   const colonIndex = text.indexOf('：');
   if (colonIndex !== -1) {
     const label = text.slice(0, colonIndex).trim();
@@ -299,6 +307,29 @@ const parseReactionItem = (text: string) => {
   return { label: '', desc: text };
 };
 
+const stripSuggestion = (text: string, lang: 'zh' | 'en') => {
+  const s = String(text || '').trim();
+  if (!s) return '';
+  if (lang === 'zh') {
+    const first = s.split(/[。！？]/)[0] || s;
+    return first.replace(/^(建议|请|应该|尽量|最好)[^\u4e00-\u9fff]*?/g, '').trim();
+  }
+  // Remove suggestion tail introduced by em-dash or hyphen
+  let out = s.replace(/\s*—.*$/, '').replace(/\s*-\s*suggest.*$/i, '');
+  // Remove parenthetical fragments
+  out = out.replace(/\s*\([^)]*\)/g, '').trim();
+  // Keep only the first sentence segment if multiple
+  out = (out.split(/[.!?]/)[0] || out).trim();
+  // Ensure terminal punctuation
+  if (!/[.!?)]$/.test(out)) out = `${out}.`;
+  return out;
+};
+
+const isSuggestionStart = (text: string, lang: 'zh' | 'en') => {
+  const s = String(text || '').trim();
+  if (lang === 'zh') return /^(建议|请|应该|尽量|最好)/.test(s);
+  return /^(set|pause|ask|name|avoid|schedule|create|practice|try|delegate|text|send|write|plan|hold|keep|add|convert|choose)\b/i.test(s);
+};
 const getStateKey = (state: string) => {
   if (state.includes('最佳')) {
     return 'best';
@@ -364,7 +395,7 @@ export const PersonalGrowthSection: React.FC<Props> = ({
   onToggleAi,
   showAiToggle = false
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const theme = useTheme();
 
   const useAiGrowth = Boolean(isAiEnabled && aiReport && (aiReport as any).growth);
@@ -374,59 +405,98 @@ export const PersonalGrowthSection: React.FC<Props> = ({
       isAiEnabled &&
         aiReport &&
         (aiReport as any).ranking &&
-        Array.isArray((aiReport as any).ranking.top5Talents) &&
-        Array.isArray((aiReport as any).ranking.top10Abilities) &&
-        Array.isArray((aiReport as any).ranking.bottom10Weaknesses)
+        (
+          (Array.isArray((aiReport as any).ranking.top5Talents) &&
+           Array.isArray((aiReport as any).ranking.top10Abilities) &&
+           Array.isArray((aiReport as any).ranking.bottom10Weaknesses)) ||
+          (Array.isArray((aiReport as any).ranking.top3Talents) &&
+           Array.isArray((aiReport as any).ranking.top3Abilities) &&
+           Array.isArray((aiReport as any).ranking.bottom3Weaknesses))
+        )
     );
 
+  const isNonEmptyArray = (v: any) => Array.isArray(v) && v.length > 0;
   const reactionData = useAiGrowth
-    ? [
-        { ...(aiReport as any).growth.best, state: '最佳状态' },
-        { ...(aiReport as any).growth.daily, state: '日常状态' },
-        { ...(aiReport as any).growth.stress, state: '压力状态' }
-      ].map(item => ({
-        state: item.state,
-        work: splitReactionList(item.work),
-        relation: splitReactionList(item.rel),
-        feeling: item.feeling,
-        entry: item.how
-      }))
+    ? (() => {
+        const rows = [
+          { ...(aiReport as any).growth.best, state: '最佳状态' },
+          { ...(aiReport as any).growth.daily, state: '日常状态' },
+          { ...(aiReport as any).growth.stress, state: '压力状态' }
+        ].map(item => ({
+          state: item.state,
+          work: splitReactionList(item.work),
+          relation: splitReactionList(item.rel),
+          feeling: item.feeling,
+          entry: item.how
+        }));
+        if (!isNonEmptyArray(rows) || rows.some(r => !isNonEmptyArray(r.work) || !isNonEmptyArray(r.relation))) {
+          return data.reactionTable;
+        }
+        return rows;
+      })()
     : data.reactionTable;
 
   const strengthsData = useAiRanking
-    ? [
-        ...(aiReport as any).ranking.top5Talents.slice(0, 1).map((item: any) => ({
-          level: '顶尖天赋',
-          field: item.area,
-          desc: item.desc,
-          improvement: item.improve
-        })),
-        ...(aiReport as any).ranking.top10Abilities.slice(0, 3).map((item: any) => ({
-          level: '显著才能',
-          field: item.area,
-          desc: item.desc,
-          improvement: item.improve
-        })),
-        ...(Array.isArray((aiReport as any).ranking.absoluteField)
-          ? (aiReport as any).ranking.absoluteField.slice(0, 3).map((item: any) => ({
-              level: '优势领域',
-              field: item.area,
-              desc: item.desc,
-              improvement: item.improve
-            }))
-          : []),
-        ...(aiReport as any).ranking.bottom10Weaknesses.slice(0, 3).map((item: any) => ({
-          level: '需留意领域',
-          field: item.area,
-          desc: item.desc,
-          improvement: item.improve
-        }))
-      ]
+    ? (() => {
+        const rows = [
+          ...(((aiReport as any).ranking.top5Talents || (aiReport as any).ranking.top3Talents || []).slice(0, 1).map((item: any) => ({
+            level: '顶尖天赋',
+            field: item.area,
+            desc: item.desc,
+            improvement: item.improve
+          }))),
+          ...(((aiReport as any).ranking.top10Abilities || (aiReport as any).ranking.top3Abilities || []).slice(0, 3).map((item: any) => ({
+            level: '显著才能',
+            field: item.area,
+            desc: item.desc,
+            improvement: item.improve
+          }))),
+          ...(Array.isArray((aiReport as any).ranking.absoluteField)
+            ? (aiReport as any).ranking.absoluteField.slice(0, 3).map((item: any) => ({
+                level: '优势领域',
+                field: item.area,
+                desc: item.desc,
+                improvement: item.improve
+              }))
+            : []),
+          ...(((aiReport as any).ranking.bottom10Weaknesses || (aiReport as any).ranking.bottom3Weaknesses || []).slice(0, 3).map((item: any) => ({
+            level: '需留意领域',
+            field: item.area,
+            desc: item.desc,
+            improvement: item.improve
+          })))
+        ];
+        const norm = (s: string) => String(s || '').toLowerCase().trim();
+        const seen = new Set<string>();
+        const deduped: any[] = [];
+        for (const r of rows) {
+          const key = norm(r.field);
+          if (key && !seen.has(key)) {
+            deduped.push(r);
+            seen.add(key);
+          }
+        }
+        // Ensure minimum items by merging fallback
+        const minTotal = 6;
+        let out = deduped;
+        if (out.length < minTotal) {
+          for (const fb of data.strengthsAnalysis) {
+            if (out.length >= minTotal) break;
+            const key = norm((fb as any).field);
+            if (!seen.has(key)) {
+              out.push(fb as any);
+              seen.add(key);
+            }
+          }
+        }
+        if (!isNonEmptyArray(out)) {
+          return data.strengthsAnalysis;
+        }
+        return out;
+      })()
     : data.strengthsAnalysis;
     
-  // Ensure we show loading if AI is enabled and loading, even if we have data (to indicate refresh)
-  // Or if AI is enabled but we don't have AI data yet (waiting for first load)
-  const showLoading = (isAiEnabled && aiLoading) || (isAiEnabled && !useAiGrowth);
+  const showLoading = isAiEnabled && aiLoading && !useAiGrowth;
 
   return (
     <ReportSection 
@@ -455,7 +525,7 @@ export const PersonalGrowthSection: React.FC<Props> = ({
           <tbody>
             {showLoading ? (
               // Loading Skeleton Rows
-              [1, 2, 3].map(i => (
+              [1, 2].map(i => (
                 <tr key={i}>
                   <td><SkeletonBlock width="80px" /></td>
                   <td><SkeletonBlock /><SkeletonBlock width="80%" /></td>
@@ -475,40 +545,40 @@ export const PersonalGrowthSection: React.FC<Props> = ({
                 </td>
                 <td>
                   <ListUl>
-                    {row.work.map((item: string, i: number) => {
-                      const { label, desc } = parseReactionItem(item);
-                      return (
+                    {row.work
+                      .map((item: string) => {
+                        const { label, desc } = parseReactionItem(item);
+                        let cleaned = stripSuggestion(desc, language);
+                        if (language === 'zh') cleaned = sanitizeZh(cleaned);
+                        return { label, desc: cleaned };
+                      })
+                      .filter(it => it.label && it.desc && !isSuggestionStart(it.desc, language))
+                      .slice(0,1)
+                      .map((it, i) => (
                         <li key={i}>
-                          {label ? (
-                            <>
-                              <strong>{label}：</strong>
-                              {desc}
-                            </>
-                          ) : (
-                            item
-                          )}
+                          <strong>{it.label}：</strong>
+                          {it.desc}
                         </li>
-                      );
-                    })}
+                      ))}
                   </ListUl>
                 </td>
                 <td>
                   <ListUl>
-                    {row.relation.map((item: string, i: number) => {
-                      const { label, desc } = parseReactionItem(item);
-                      return (
+                    {row.relation
+                      .map((item: string) => {
+                        const { label, desc } = parseReactionItem(item);
+                        let cleaned = stripSuggestion(desc, language);
+                        if (language === 'zh') cleaned = sanitizeZh(cleaned);
+                        return { label, desc: cleaned };
+                      })
+                      .filter(it => it.label && it.desc && !isSuggestionStart(it.desc, language))
+                      .slice(0,1)
+                      .map((it, i) => (
                         <li key={i}>
-                          {label ? (
-                            <>
-                              <strong>{label}：</strong>
-                              {desc}
-                            </>
-                          ) : (
-                            item
-                          )}
+                          <strong>{it.label}：</strong>
+                          {it.desc}
                         </li>
-                      );
-                    })}
+                      ))}
                   </ListUl>
                 </td>
                 <td>{row.feeling}</td>
@@ -522,7 +592,7 @@ export const PersonalGrowthSection: React.FC<Props> = ({
       {/* Mobile View */}
       <MobileCardContainer>
         {showLoading ? (
-           [1, 2, 3].map(i => (
+           [1, 2].map(i => (
              <MobileCard key={i}>
                <SkeletonBlock width="100px" style={{marginBottom: '1rem'}} />
                <SkeletonBlock />
@@ -544,26 +614,42 @@ export const PersonalGrowthSection: React.FC<Props> = ({
             <CardRow>
               <strong>{t('report.growthSection.reaction.work')}</strong>
               <ProcessList>
-                {row.work.map((item: string, i: number) => (
-                  <ProcessItem key={i}>
-                    <ProcessContent>
-                      <p>{item}</p>
-                    </ProcessContent>
-                  </ProcessItem>
-                ))}
+                {row.work
+                  .map((item: string) => {
+                    const { label, desc } = parseReactionItem(item);
+                    const cleaned = stripSuggestion(desc, language);
+                    return { label, desc: cleaned };
+                  })
+                  .filter(it => it.label && it.desc && !isSuggestionStart(it.desc, language))
+                  .slice(0,1)
+                  .map((it, i) => (
+                    <ProcessItem key={i}>
+                      <ProcessContent>
+                        <p><strong>{it.label}：</strong>{it.desc}</p>
+                      </ProcessContent>
+                    </ProcessItem>
+                  ))}
               </ProcessList>
             </CardRow>
 
             <CardRow>
               <strong>{t('report.growthSection.reaction.relationShort')}</strong>
               <ProcessList>
-                {row.relation.map((item: string, i: number) => (
-                  <ProcessItem key={i}>
-                    <ProcessContent>
-                      <p>{item}</p>
-                    </ProcessContent>
-                  </ProcessItem>
-                ))}
+                {row.relation
+                  .map((item: string) => {
+                    const { label, desc } = parseReactionItem(item);
+                    const cleaned = stripSuggestion(desc, language);
+                    return { label, desc: cleaned };
+                  })
+                  .filter(it => it.label && it.desc && !isSuggestionStart(it.desc, language))
+                  .slice(0,1)
+                  .map((it, i) => (
+                    <ProcessItem key={i}>
+                      <ProcessContent>
+                        <p><strong>{it.label}：</strong>{it.desc}</p>
+                      </ProcessContent>
+                    </ProcessItem>
+                  ))}
               </ProcessList>
             </CardRow>
             

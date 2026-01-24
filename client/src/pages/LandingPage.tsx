@@ -82,7 +82,7 @@ const StartButton = styled(motion.button)`
   }
 `;
 
-const StartMetaRow = styled.div`
+const StartMetaRow = styled(motion.div)`
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -91,8 +91,8 @@ const StartMetaRow = styled.div`
   color: ${({ theme }) => theme.colors.textLight};
 
   @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    flex-direction: column;
-    gap: 0.4rem;
+    flex-direction: row;
+    gap: 1rem;
   }
 `;
 
@@ -207,6 +207,7 @@ export const LandingPage: React.FC = () => {
 
   const handleStartTest = () => {
     StorageManager.removeItem('mbti_answers');
+    StorageManager.removeItem('mbti_likert_answers');
     StorageManager.removeItem('enneagram_answers');
     StorageManager.removeItem('enneagram_result');
     navigate('/mbti');
@@ -250,7 +251,11 @@ export const LandingPage: React.FC = () => {
         {t('landing.start')} <FaArrowRight />
       </StartButton>
 
-      <StartMetaRow>
+      <StartMetaRow
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7, duration: 0.5 }}
+      >
         <MetaItem>
           <FaClock />
           {t('landing.meta.time')}

@@ -508,7 +508,7 @@ export const EnneagramPage: React.FC = () => {
         </Sidebar>
 
         <MainContent>
-          <PageTitle>{t('enneagram.title')} ({t('enneagram.page')} {currentPage + 1}/{totalPages})</PageTitle>
+          <PageTitle>{t('enneagram.title')}</PageTitle>
       
           <motion.div
             key={currentPage}
@@ -547,6 +547,9 @@ export const EnneagramPage: React.FC = () => {
         <NavButton onClick={handlePrev}>
           {t('common.prev')}
         </NavButton>
+        <div style={{ alignSelf: 'center', color: '#718096' }}>
+          {language === 'zh' ? `第 ${currentPage + 1} / ${totalPages} ${t('mbti.page') || '页'}` : `Page ${currentPage + 1} / ${totalPages}`}
+        </div>
         <NavButton onClick={handleNext} disabled={!isPageComplete}>
           {currentPage === totalPages - 1 ? t('enneagram.seeResults') : t('common.next')}
         </NavButton>

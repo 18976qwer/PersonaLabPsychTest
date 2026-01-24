@@ -1,7 +1,6 @@
 import React, { ReactNode } from 'react';
 import styled from 'styled-components';
 import { ReportNavigation } from './ReportNavigation';
-import { AiSettingsPanel } from './AiSettingsPanel';
 import { ScrollProgress } from '../common/ScrollProgress';
 import { BackToTop } from '../common/BackToTop';
 
@@ -49,7 +48,6 @@ export const ReportLayout: React.FC<Props> = ({ children }) => {
       <ContentWrapper>
         <ReportNavigation />
         <MobileNavSpacer />
-        <AiSettingsPanel />
         <MainContent>
           {children}
         </MainContent>

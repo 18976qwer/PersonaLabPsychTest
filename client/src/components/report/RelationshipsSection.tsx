@@ -5,6 +5,7 @@ import { ReportSection } from './ReportSection';
 import { AnalysisResult } from '../../types/report';
 import { useLanguage } from '../../context/LanguageContext';
 import { AIReportData } from '../../utils/ai';
+import { normalizeText, jaccardSimilarity } from '../../utils/textSimilarity';
 import {
   DesktopTableContainer,
   MobileCardContainer,
@@ -219,39 +220,153 @@ export const RelationshipsSection: React.FC<Props> = ({
 
   const useAiRelationships = Boolean(isAiEnabled && aiReport && (aiReport as any).relationships);
 
+  const isNonEmptyArray = (v: any) => Array.isArray(v) && v.length > 0;
   const communicationData = useAiRelationships &&
     Array.isArray((aiReport as any).relationships.communication)
-      ? (aiReport as any).relationships.communication.map((item: any) => ({
-          misunderstanding: item.mistake,
-          reason: item.cause,
-          adjustment: item.adjustment
-        }))
+      ? (() => {
+          const rows = (aiReport as any).relationships.communication.map((item: any) => ({
+            misunderstanding: item.mistake,
+            reason: item.cause,
+            adjustment: item.adjustment
+          }));
+          if (!isNonEmptyArray(rows)) return data.communicationTable;
+          // Deduplicate rows by misunderstanding/reason/adjustment similarity
+          const out: Array<{ misunderstanding: string; reason: string; adjustment: string }> = [];
+          for (const r of rows) {
+            const m = normalizeText(r.misunderstanding);
+            const dup = out.some(o =>
+              jaccardSimilarity(m, normalizeText(o.misunderstanding)) >= 0.85 ||
+              jaccardSimilarity(normalizeText(r.reason), normalizeText(o.reason)) >= 0.85
+            );
+            if (!dup) out.push(r);
+          }
+          // Ensure at least 3 rows; backfill from template if needed
+          while (out.length < 3) {
+            for (const fb of data.communicationTable) {
+              const m = normalizeText(fb.misunderstanding);
+              const dup = out.some(o => jaccardSimilarity(m, normalizeText(o.misunderstanding)) >= 0.85);
+              if (!dup) {
+                out.push(fb);
+                if (out.length >= 3) break;
+              }
+            }
+            if (out.length >= 3) break;
+            // last resort: push first unique
+            if (data.communicationTable.length) out.push(data.communicationTable[0]);
+          }
+          return out.slice(0, 5);
+        })()
       : data.communicationTable;
 
   const intimacyStrengths = useAiRelationships &&
     (aiReport as any).relationships.intimacy &&
     Array.isArray((aiReport as any).relationships.intimacy.strengths)
-      ? (aiReport as any).relationships.intimacy.strengths
+      ? (() => {
+          const rows = (aiReport as any).relationships.intimacy.strengths;
+          if (!isNonEmptyArray(rows)) return data.intimacy.strengths;
+          const out: string[] = [];
+          for (const r of rows) {
+            const dup = out.some(o => jaccardSimilarity(normalizeText(o), normalizeText(r)) >= 0.85);
+            if (!dup) out.push(r);
+          }
+          // ensure min 3
+          for (const fb of data.intimacy.strengths) {
+            if (out.length >= 3) break;
+            const dup = out.some(o => jaccardSimilarity(normalizeText(o), normalizeText(fb)) >= 0.85);
+            if (!dup) out.push(fb);
+          }
+          return out.slice(0, 6);
+        })()
       : data.intimacy.strengths;
 
   const intimacyChallenges = useAiRelationships &&
     (aiReport as any).relationships.intimacy &&
     Array.isArray((aiReport as any).relationships.intimacy.challenges)
-      ? (aiReport as any).relationships.intimacy.challenges
+      ? (() => {
+          const rows = (aiReport as any).relationships.intimacy.challenges;
+          if (!isNonEmptyArray(rows)) return data.intimacy.challenges;
+          const out: string[] = [];
+          for (const r of rows) {
+            const dup = out.some(o => jaccardSimilarity(normalizeText(o), normalizeText(r)) >= 0.85);
+            if (!dup) out.push(r);
+          }
+          // ensure min 3
+          for (const fb of data.intimacy.challenges) {
+            if (out.length >= 3) break;
+            const dup = out.some(o => jaccardSimilarity(normalizeText(o), normalizeText(fb)) >= 0.85);
+            if (!dup) out.push(fb);
+          }
+          return out.slice(0, 6);
+        })()
       : data.intimacy.challenges;
   
   const growthData = useAiRelationships &&
     (aiReport as any).relationships.intimacy &&
     (aiReport as any).relationships.intimacy.growth
-      ? {
-          awareness: (aiReport as any).relationships.intimacy.growth.consciousness,
-          skill: (aiReport as any).relationships.intimacy.growth.skill,
-          pattern: (aiReport as any).relationships.intimacy.growth.pattern
-        }
+      ? (() => {
+          const obj = {
+            awareness: (aiReport as any).relationships.intimacy.growth.consciousness,
+            skill: (aiReport as any).relationships.intimacy.growth.skill,
+            pattern: (aiReport as any).relationships.intimacy.growth.pattern
+          };
+          if (!obj || !isNonEmptyArray(obj.awareness) || !isNonEmptyArray(obj.skill) || !isNonEmptyArray(obj.pattern)) return data.intimacy.growth;
+          const dedupeList = (list: Array<{ title: string; desc: string }>) => {
+            const out: Array<{ title: string; desc: string }> = [];
+            for (const it of list) {
+              const dup = out.some(o =>
+                jaccardSimilarity(normalizeText(o.title), normalizeText(it.title)) >= 0.85 ||
+                jaccardSimilarity(normalizeText(o.desc), normalizeText(it.desc)) >= 0.85
+              );
+              if (!dup) out.push(it);
+            }
+            return out;
+          };
+          const aw = dedupeList(obj.awareness);
+          const sk = dedupeList(obj.skill);
+          const pt = dedupeList(obj.pattern);
+
+          // If AI provides data, use it directly without merging default data
+          // This prevents default "fallback" items from appearing alongside AI results
+          const result = {
+            awareness: aw.length > 0 ? aw : data.intimacy.growth.awareness,
+            skill: sk.length > 0 ? sk : data.intimacy.growth.skill,
+            pattern: pt.length > 0 ? pt : data.intimacy.growth.pattern
+          };
+          
+          // English translation fallback
+          const titleMap: Record<string, string> = {
+            '自我觉察能力': 'Self-awareness',
+            '情绪识别能力': 'Emotion recognition',
+            '有效沟通技巧': 'Effective communication',
+            '冲突处理能力': 'Conflict resolution',
+            '依恋模式调整': 'Attachment adjustment',
+            '重复性模式识别': 'Repetitive pattern recognition'
+          };
+          const descMap: Record<string, string> = {
+            '能够意识到自己在关系中的行为模式': 'Able to recognize one’s behavioral patterns in relationships',
+            '能够识别自己和他人的情绪变化': 'Able to identify emotional changes in self and others',
+            '能够清晰表达需求和倾听对方': 'Able to clearly express needs and listen to others',
+            '能够以建设性方式处理分歧': 'Able to handle disagreements constructively',
+            '逐步建立更安全的依恋关系': 'Gradually build more secure attachment',
+            '觉察并打破不健康的关系循环': 'Recognize and break unhealthy relationship cycles'
+          };
+          if ((useLanguage() as any).language === 'en') {
+            const mapItems = (arr: Array<{ title: string; desc: string }>) =>
+              arr.map(it => ({
+                title: titleMap[it.title] || it.title,
+                desc: descMap[it.desc] || it.desc
+              }));
+            return {
+              awareness: mapItems(result.awareness),
+              skill: mapItems(result.skill),
+              pattern: mapItems(result.pattern)
+            };
+          }
+          return result;
+        })()
       : data.intimacy.growth;
 
-  // Ensure we show loading if AI is enabled and loading, or if AI is enabled but we don't have AI data yet
-  const showLoading = (isAiEnabled && aiLoading) || (isAiEnabled && !useAiRelationships);
+  const showLoading = isAiEnabled && aiLoading && !useAiRelationships;
 
   if (showLoading) {
     return (
